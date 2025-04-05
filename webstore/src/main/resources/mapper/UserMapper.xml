@@ -1,35 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wxl.webstore.user.mapper.UserMapper">
-    <select id="selectByUsername" resultType="com.wxl.webstore.user.entity.User">
+    <resultMap id="BaseResultMap" type="com.wxl.webstore.user.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="role" property="role"/>
+        <result column="register_phone" property="registerPhone"/>
+        <result column="register_email" property="registerEmail"/>
+        <result column="register_time" property="registerTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+        <result column="deleted_at" property="deletedAt"/>
+    </resultMap>
+
+    <select id="selectByUsername" resultMap="BaseResultMap">
         SELECT * FROM user WHERE username = #{username}
     </select>
 
-    <select id="selectByPhone" resultType="com.wxl.webstore.user.entity.User">
-        SELECT * FROM user WHERE phone = #{phone}
+    <select id="selectByPhone" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE register_phone = #{phone}
     </select>
 
-    <select id="selectByEmail" resultType="com.wxl.webstore.user.entity.User">
-        SELECT * FROM user WHERE email = #{email}
+    <select id="selectByEmail" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE register_email = #{email}
     </select>
-    <select id="selectAllByRole" resultType="com.wxl.webstore.user.entity.User">
+
+    <select id="selectAllByRole" resultMap="BaseResultMap">
         SELECT * FROM user WHERE role = #{role}
     </select>
-    <select id="selectSELLERByIsDeleted" resultType="com.wxl.webstore.user.entity.User">
+
+    <select id="selectSELLERByIsDeleted" resultMap="BaseResultMap">
         SELECT * FROM user WHERE is_deleted = #{is_deleted} AND role = 'SELLER'
     </select>
-    <select id="selectCUSTOMERByIsDeleted" resultType="com.wxl.webstore.user.entity.User">
+
+    <select id="selectCUSTOMERByIsDeleted" resultMap="BaseResultMap">
         SELECT * FROM user WHERE is_deleted = #{is_deleted} AND role = 'CUSTOMER'
     </select>
-    <select id="selectByPhoneAndRole" resultType="com.wxl.webstore.user.entity.User">
-        SELECT * FROM user WHERE phone = #{phone} AND role = #{role}
-    </select>
-    <select id="selectByEmailAndRole" resultType="com.wxl.webstore.user.entity.User">
-        SELECT * FROM user WHERE email = #{email} AND role = #{role}
-    </select>
-    <select id="selectByUsernameAndRole" resultType="com.wxl.webstore.user.entity.User">
-        SELECT * FROM user WHERE name = #{name} AND role = #{role}
+
+    <select id="selectByPhoneAndRole" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE register_phone = #{phone} AND role = #{role}
     </select>
 
+    <select id="selectByEmailAndRole" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE register_email = #{email} AND role = #{role}
+    </select>
 
+    <select id="selectByUsernameAndRole" resultMap="BaseResultMap">
+        SELECT * FROM user WHERE username = #{username} AND role = #{role}
+    </select>
 </mapper>

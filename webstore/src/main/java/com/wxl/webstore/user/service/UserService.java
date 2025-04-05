@@ -31,7 +31,7 @@ public interface UserService extends IService<User> {
      */
     User login(UserLoginDTO dto);
 
-    UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
+    //UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
 
     void deleteByAccountAndRole(String account, UserRole role);
 }

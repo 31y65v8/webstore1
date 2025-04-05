@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
@@ -40,31 +39,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User register(UserRegisterDTO dto) {
-        // 1. 校验用户名/手机/邮箱是否已存在
-        /*if (userMapper.selectByUsername(dto.getUsername()) != null) {
-            throw new RuntimeException("用户名已存在");
-        }*/
-        if (dto.getPhone() == null && dto.getEmail() == null) {
-            throw new RuntimeException("手机号和邮箱不能同时为空");
+        // 1. 校验account是否已存在
+        if (dto.getAccount() == null || dto.getAccount().isEmpty()) {
+            throw new RuntimeException("账号不能为空");
         }
 
-        if (dto.getPhone() != null && dto.getRole() !=null && userMapper.selectByPhoneAndRole(dto.getPhone(),dto.getRole()) != null) {
-            throw new RuntimeException("手机号已注册");
-        }
-        if (dto.getEmail() != null && dto.getRole() !=null && userMapper.selectByEmailAndRole(dto.getEmail(),dto.getRole()) != null) {
-            throw new RuntimeException("邮箱已注册");
+        // 判断是手机号还是邮箱
+        boolean isEmail = dto.getAccount().contains("@");
+        User existingUser;
+        
+        if (isEmail) {
+            existingUser = userMapper.selectByEmailAndRole(dto.getAccount(), dto.getRole());
+            if (existingUser != null) {
+                throw new RuntimeException("该邮箱已注册");
+            }
+        } else {
+            existingUser = userMapper.selectByPhoneAndRole(dto.getAccount(), dto.getRole());
+            if (existingUser != null) {
+                throw new RuntimeException("该手机号已注册");
+            }
         }
 
-
-        // 2. 密码加密
+        // 2. 创建用户实体
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(dto.getRole()); // 从前端获得角色
-        user.setRegisterPhone(dto.getPhone());
-        user.setRegisterEmail(dto.getEmail());
+        user.setRole(dto.getRole());
+        
+        // 根据account类型设置手机号或邮箱
+        if (isEmail) {
+            user.setRegisterEmail(dto.getAccount());
+        } else {
+            user.setRegisterPhone(dto.getAccount());
+        }
+        
         user.setRegisterTime(LocalDateTime.now());
-        //user.setIsDeleted(false); // 设置初始未删除状态
 
         // 3. 保存用户
         userMapper.insert(user);
@@ -94,36 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 
 
-    @Override
-    public UserDetails loadUserByUsername(String account) throws UsernameNotFoundException {
-        // 从SecurityContext中获取当前请求的角色
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new UsernameNotFoundException("未找到认证信息");
-        }
-
-        // 获取角色信息
-        String roleStr = authentication.getAuthorities().iterator().next().getAuthority();
-        UserRole role = UserRole.valueOf(roleStr.replace("ROLE_", ""));
-
-        // 根据账号类型（手机/邮箱）和角色查询用户
-        User user = null;
-        if (account.contains("@")) {
-            user = userMapper.selectByEmailAndRole(account, role);
-        } else if (account.matches("\\d+")) {
-            user = userMapper.selectByPhoneAndRole(account, role);
-        }
-
-        if (user == null) {
-            throw new UsernameNotFoundException("用户不存在");
-        }
-
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
-    }
+    
 
     //用户注销当前登录的账户，软删除
     @Override

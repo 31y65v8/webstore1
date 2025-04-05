@@ -1,6 +1,8 @@
 package com.wxl.webstore.common.config;
 
 import com.wxl.webstore.common.filter.JwtAuthenticationFilter;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,6 +16,8 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import com.wxl.webstore.common.utils.JwtUtil;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -22,6 +26,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
+    @Autowired
     public SecurityConfig(UserDetailsService userDetailsService, JwtUtil jwtUtil) {
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
@@ -59,9 +64,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // 添加CORS配置
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index", "/api/user/register", "/api/user/login").permitAll()
+                        // 允许匿名访问的接口
+                        .requestMatchers(
+                            "/",
+                            "/index",
+                            "/api/user/register",
+                            "/api/user/login",
+                            "/api/product/products",
+                            "/api/product/products/category"
+                        ).permitAll()
                         // 商家相关接口
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
                         // 客户相关接口
@@ -71,7 +85,20 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(userDetailsService, jwtUtil), UsernamePasswordAuthenticationFilter.class);
-
+                
+        
         return http.build();
+    }
+
+    // CORS 配置
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("http://localhost:5173"); // 允许前端的域名
+        configuration.addAllowedMethod("*"); // 允许所有 HTTP 方法
+        configuration.addAllowedHeader("*"); // 允许所有请求头
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // 配置全局 CORS
+        return source;
     }
 }
