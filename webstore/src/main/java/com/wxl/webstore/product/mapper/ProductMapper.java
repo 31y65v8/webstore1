@@ -1,0 +1,52 @@
+package com.wxl.webstore.product.mapper;
+
+import com.wxl.webstore.product.entity.Product;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+/**
+ * <p>
+ * 商品信息表 Mapper 接口
+ * </p>
+ *
+ * @author wxl
+ * @since 2025-04-01
+ */
+@Mapper
+public interface ProductMapper extends BaseMapper<Product> {
+
+
+    // 按照商品名称查询
+    Product selectByName(String name);
+
+    // 按照卖家ID查询商品
+    //List<Product> selectBySellerId(Long sellerId);
+
+    // 按照卖家ID和分类查询商品
+    //List<Product> selectBySellerIdAndCategory(Long sellerId, ProductCategory category);
+
+    // 查询所有商品
+    //List<Product> selectAll();
+
+    // 按照商品分类查询商品
+    //List<Product> selectByCategory(String category);
+
+    // 根据是否删除标志查询商品
+    //List<Product> selectByIsDeleted(Integer isDeleted);
+
+    // 分页查询所有商品
+    Page<Product> selectPageAll(Page<Product> page);
+
+    // 按分类分页查询商品
+    //Page<Product> selectPageByCategory(Page<Product> page, @Param("category") ProductCategory category);
+
+
+    // 根据商品名称模糊查询并分页
+    @Select("SELECT * FROM product WHERE name LIKE CONCAT('%', #{name}, '%')")
+    Page<Product> selectPageByName(Page<Product> page, @Param("name") String name);
+
+
+}
