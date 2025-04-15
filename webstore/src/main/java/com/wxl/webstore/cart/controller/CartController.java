@@ -57,6 +57,26 @@ public class CartController {
         cartService.clearCart(userId);
     }
 
+    //选择购物车中的商品
+    @PutMapping("/select")
+    public void selectProduct(@RequestParam Long userId,
+                             @RequestParam Long productId,
+                             @RequestParam Boolean selected) {
+        cartService.selectProduct(userId, productId, selected);
+    }
+
+    //全选购物车
+    @PutMapping("/selectAll")
+    public void selectAll(@RequestParam Long userId,
+                         @RequestParam Boolean selected) {
+        cartService.selectAll(userId, selected);
+    }
+    
+    //取消全选
+    @PutMapping("/unselectAll")
+    public void unselectAll(@RequestParam Long userId) {
+        cartService.unselectAll(userId);
+    }
 
 
 }

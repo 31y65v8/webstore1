@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Getter;
 import lombok.Setter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -58,6 +59,7 @@ private static final long serialVersionUID = 1L;
     private Boolean isDefault;
         @Schema(description = "是否删除(0-未删除,1-已删除)")
     @TableField("is_deleted")
+    @TableLogic
     private Boolean isDeleted;
         @Schema(description = "创建时间")
     @TableField("create_time")

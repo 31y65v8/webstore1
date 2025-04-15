@@ -25,5 +25,20 @@ public interface CartService extends IService<Cart> {
     void updateQuantity(Long userId, Long productId, Integer quantity);
     //清空购物车
     void clearCart(Long userId);
+    //选择购物车中的商品
+    void selectProduct(Long userId, Long productId, Boolean selected);
+    //全选购物车
+    void selectAll(Long userId, Boolean selected);
+    //取消全选
+    void unselectAll(Long userId);
+    //获取购物车中选中的商品
+    List<Cart> getSelectedItems(Long userId);
+    //清除购物车中被选中的商品
+    void clearSelectedItems(Long userId);
+    //获取购物车中未选中的商品
+    //List<CartDTO> getUnselectedProducts(Long userId);
+    //获取购物车中选中的商品数量
+    //Integer getSelectedProductCount(Long userId);
+    
 
 }

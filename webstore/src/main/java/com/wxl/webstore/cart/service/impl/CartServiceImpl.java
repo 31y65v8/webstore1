@@ -4,12 +4,15 @@ import com.wxl.webstore.cart.dto.CartDTO;
 import com.wxl.webstore.cart.entity.Cart;
 import com.wxl.webstore.cart.mapper.CartMapper;
 import com.wxl.webstore.cart.service.CartService;
+import com.wxl.webstore.product.service.*;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.product.entity.Product;
 import com.wxl.webstore.product.service.ProductService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,6 +76,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements Ca
             newCart.setQuantity(quantity);
             cartMapper.insert(newCart);
         }
+
     }
 
     @Override
@@ -101,6 +105,50 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements Ca
     public void clearCart(Long userId) {
         cartMapper.delete(new LambdaQueryWrapper<Cart>()
                 .eq(Cart::getUserId, userId));
+    }
+
+    @Override
+    @Transactional
+    public void selectProduct(Long userId, Long productId, Boolean selected) {
+        Cart cart = cartMapper.selectOne(new LambdaQueryWrapper<Cart>()
+                .eq(Cart::getUserId, userId)
+                .eq(Cart::getProductId, productId));
+        if (cart != null) {
+            cart.setSelected(selected);
+            cartMapper.updateById(cart);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void selectAll(Long userId, Boolean selected) {
+        List<Cart> cartItems = cartMapper.selectList(new LambdaQueryWrapper<Cart>()
+                .eq(Cart::getUserId, userId));
+        for (Cart cart : cartItems) {
+            cart.setSelected(selected);
+            cartMapper.updateById(cart);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unselectAll(Long userId) {
+        selectAll(userId, false);
+    }
+
+    @Override
+    public List<Cart> getSelectedItems(Long userId) {
+        QueryWrapper<Cart> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", userId).eq("selected", true);
+        return cartMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    @Transactional
+    public void clearSelectedItems(Long userId) {
+        cartMapper.delete(new LambdaQueryWrapper<Cart>()
+                .eq(Cart::getUserId, userId)
+                .eq(Cart::getSelected, true));
     }
 
 }

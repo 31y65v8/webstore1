@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Getter;
 import lombok.Setter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +32,7 @@ public class User implements Serializable {
     @EnumValue
     private UserRole role;
 
-    @Schema(description = "注册手机号（唯一）")
+    @Schema(description = "注册手机号")
     @TableField("register_phone")
     private String registerPhone;
 
@@ -43,6 +44,7 @@ public class User implements Serializable {
 
     @Schema(description = "是否删除(0-未删除,1-已删除)")
     @TableField("is_deleted")
+    @TableLogic
     private Boolean isDeleted;
 
     @Schema(description = "删除时间")

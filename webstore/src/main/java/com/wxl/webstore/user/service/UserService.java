@@ -19,19 +19,32 @@ public interface UserService extends IService<User> {
 
     /**
      * 用户注册
-     * @param dto 用户注册DTO
+     * @param dto 注册信息
      * @return 注册成功的用户信息
      */
     User register(UserRegisterDTO dto);
 
     /**
      * 用户登录
-     * @param dto 用户登录DTO
+     * @param dto 登录信息
      * @return 登录成功的用户信息
      */
     User login(UserLoginDTO dto);
 
     //UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
 
+    /**
+     * 根据账号和角色删除用户
+     * @param account 账号
+     * @param role 角色
+     */
     void deleteByAccountAndRole(String account, UserRole role);
+
+    /**
+     * 检查用户是否存在
+     * @param account 账号
+     * @param role 角色
+     * @return 是否存在
+     */
+    boolean existsByAccountAndRole(String account, UserRole role);
 }

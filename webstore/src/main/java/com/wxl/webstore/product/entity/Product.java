@@ -9,6 +9,7 @@ import com.wxl.webstore.common.enums.ProductCategory;
 import lombok.Getter;
 import lombok.Setter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 
     /**
     * 商品信息表
@@ -52,5 +53,6 @@ private static final long serialVersionUID = 1L;
     private LocalDateTime updateTime;
         @Schema(description = "是否删除(0-正常,1-删除)")
     @TableField("is_deleted")
+    @TableLogic
     private Boolean isDeleted;
 }

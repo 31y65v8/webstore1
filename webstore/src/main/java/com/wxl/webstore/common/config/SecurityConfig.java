@@ -5,6 +5,7 @@ import com.wxl.webstore.common.filter.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -37,6 +38,9 @@ public class SecurityConfig {
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+   
+
 
     /*@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -74,8 +78,13 @@ public class SecurityConfig {
                             "/api/user/register",
                             "/api/user/login",
                             "/api/product/products",
-                            "/api/product/products/category"
+                            "/api/product/products/category",
+                            "/api/product/upload/image",
+                            "/api/product/images/**",
+                            "/error"  // 添加错误页面路径
                         ).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // 商家相关接口
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
                         // 客户相关接口

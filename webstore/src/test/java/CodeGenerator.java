@@ -13,15 +13,15 @@ public class CodeGenerator {
                     builder.author("wxl")        // 作者
                             //.enableSwagger()         // 开启Swagger
                             //.fileOverride()          // 覆盖已生成文件
-                            .outputDir("src\\main\\java");  // 输出目录
+                            .outputDir("webstore\\src\\main\\java");  // 输出目录
                 })
                 .packageConfig(builder -> {
-                    builder.parent("com.wxl.webstore.receiverInfo")  // 父包名
+                    builder.parent("com.wxl.webstore.order")  // 父包名
                             .moduleName("")     // 模块名
                             .pathInfo(Collections.singletonMap(OutputFile.xml, "src\\main\\resources\\mapper")); // XML位置
                 })
                 .strategyConfig(builder -> {
-                    builder.addInclude("receiver_info") // 要生成的表名
+                    builder.addInclude("orders","order_item") // 要生成的表名
                             .addTablePrefix("") // 不忽略表前缀
                             .entityBuilder()//.enableFileOverride()
                             .enableLombok()

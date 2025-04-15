@@ -36,12 +36,14 @@ public class JwtUtil {
     /**
      * 生成 JWT 令牌
      * @param account 账号（手机号/邮箱）
+     * @param userId 用户ID
      * @param role 用户角色
      * @return JWT Token
      */
-    public String generateToken(String account, UserRole role) {
+    public String generateToken(String account, Long userId, UserRole role) {
         return Jwts.builder()
                 .subject(account)
+                .claim("userId", userId)
                 .claim("role", role.name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
@@ -66,6 +68,15 @@ public class JwtUtil {
         } catch (JwtException e) {
             throw new RuntimeException("Token无效", e);
         }
+    }
+
+    /**
+     * 获取用户ID
+     * @param token JWT Token
+     * @return Long
+     */
+    public Long getUserIdFromToken(String token) {
+        return getClaimsFromToken(token).get("userId", Long.class);
     }
 
     /**

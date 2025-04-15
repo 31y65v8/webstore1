@@ -23,6 +23,8 @@ import ProductCard from './ProductCard.vue'
 import Pagination from './Pagination.vue'
 import axios from 'axios'
 
+
+
 const props = defineProps({
   category: {
     type: String,
@@ -31,6 +33,10 @@ const props = defineProps({
   pageSize: {
     type: Number,
     default: 12
+  },
+  searchQuery: {
+    type: String,
+    default: ''
   }
 })
 
@@ -43,16 +49,17 @@ const totalPages = ref(1)
 const fetchProducts = async () => {
   emit('loading-change', true)
   try {
-    const url = props.category === 'ALL' 
-      ? '/api/product/products'
-      : '/api/product/products/category'
-    
+    let url = '/api/product/products'
     const params = {
       pageNum: currentPage.value,
       pageSize: props.pageSize
     }
     
-    if (props.category !== 'ALL') {
+    if (props.searchQuery) {
+      url = '/api/product/products/search'
+      params.name = props.searchQuery
+    } else if (props.category !== 'ALL') {
+      url = '/api/product/products/category'
       params.category = props.category
     }
 
@@ -64,6 +71,8 @@ const fetchProducts = async () => {
   } finally {
     emit('loading-change', false)
   }
+  console.log('商品数据：', products.value)
+
 }
 
 const handlePageChange = (page) => {
@@ -73,6 +82,12 @@ const handlePageChange = (page) => {
 
 // 监听分类变化
 watch(() => props.category, () => {
+  currentPage.value = 1 // 重置页码
+  fetchProducts()
+})
+
+// 监听搜索查询变化
+watch(() => props.searchQuery, () => {
   currentPage.value = 1 // 重置页码
   fetchProducts()
 })

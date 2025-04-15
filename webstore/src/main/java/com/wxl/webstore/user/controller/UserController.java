@@ -43,7 +43,7 @@ public class UserController {
     public Result<String> login(@RequestBody @Valid UserLoginDTO dto, HttpServletRequest request) {
         User user = userService.login(dto);
         // 生成JWT token返回给前端，使用登录时选择的角色
-        String token = jwtUtil.generateToken(dto.getAccount(), dto.getRole());
+        String token = jwtUtil.generateToken(dto.getAccount(), user.getId(), dto.getRole());
         return Result.success(token);
     }
 

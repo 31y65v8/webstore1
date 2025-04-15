@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import org.springframework.lang.NonNull;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -31,8 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
                 String path = request.getRequestURI();
 
+    // 处理跨域预检请求
+    if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+        filterChain.doFilter(request, response);
+        return;
+    }
+
     // 跳过登录和注册接口
-    if (path.equals("/api/user/login") || path.equals("/api/user/register")||path.equals("/")||path.equals("/index")||path.equals("/api/product/products")||path.equals("/api/product/products/category")||path.equals("/api/product/products/search")) {
+    if (path.equals("/api/user/login") || path.equals("/api/user/register")||path.equals("/")||path.equals("/index")||path.equals("/api/product/products")||path.equals("/api/product/products/category")||path.equals("/api/product/products/search")||path.equals("/api/product/upload/image")) {
         filterChain.doFilter(request, response);
         return;
     }
@@ -44,14 +51,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = jwtUtil.getClaimsFromToken(token);
                 String account = claims.getSubject();
                 String role = claims.get("role", String.class);
+                Long userId = claims.get("userId", Long.class);
 
-                // 创建包含角色的认证信息
-                UserDetails userDetails = userDetailsService.loadUserByUsername(account);
+                // 直接创建认证信息，不再查询数据库
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, 
-                        null, 
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    account, // principal
+                    token,  // credentials (原始token)
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
                 );
+                
+                // 设置额外信息
+                authentication.setDetails(new HashMap<String, Object>() {{
+                    put("userId", userId);
+                    put("role", role);
+                }});
                 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException e) {

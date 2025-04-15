@@ -1,6 +1,15 @@
 <template>
   <nav class="navbar">
     <div class="logo">WebStore</div>
+    <div class="search-bar">
+      <input 
+        type="text" 
+        v-model="searchQuery" 
+        @keyup.enter="handleSearch"
+        placeholder="搜索商品..."
+      >
+      <button @click="handleSearch">搜索</button>
+    </div>
     <div class="nav-links">
       <a v-for="category in categories" 
          :key="category.value" 
@@ -25,11 +34,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const emit = defineEmits(['category-change', 'show-login', 'show-register'])
 
 const { isLoggedIn, username, logout } = useAuth()
 
+const searchQuery = ref('')
 const currentCategory = ref('ALL')
 const categories = [
   { value: 'ALL', label: '全部' },
@@ -42,6 +54,14 @@ const categories = [
   { value: 'BOOKS', label: '书籍' },
   { value: 'DIGITAL', label: '数码' }
 ]
+
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return
+  router.push({
+    path: '/search',
+    query: { q: searchQuery.value }
+  })
+}
 
 const handleCategorySelect = (category) => {
   currentCategory.value = category.value
@@ -72,6 +92,35 @@ const handleLogout = () => {
   font-size: 1.5rem;
   font-weight: bold;
   white-space: nowrap;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 1rem;
+}
+
+.search-bar input {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px;
+  font-size: 0.9rem;
+}
+
+.search-bar button {
+  padding: 0.5rem 1rem;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.search-bar button:hover {
+  background-color: #40a9ff;
 }
 
 .nav-links {
@@ -126,6 +175,16 @@ const handleLogout = () => {
   .navbar {
     padding: 1rem;
     flex-wrap: wrap;
+  }
+
+  .search-bar {
+    order: 2;
+    width: 100%;
+    margin: 1rem 0;
+  }
+
+  .search-bar input {
+    width: 100%;
   }
 
   .nav-links {

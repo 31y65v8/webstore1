@@ -1,7 +1,7 @@
 <template>
   <div class="product-card" @click="$emit('click')">
     <div class="product-image">
-      <img :src="product.image" :alt="product.name">
+      <img :src="product.imgurl" :alt="product.name">
     </div>
     <div class="product-info">
       <h3 class="product-name">{{ product.name }}</h3>
@@ -15,6 +15,8 @@
 </template>
 
 <script setup>
+defineEmits(['product-click'])
+
 const props = defineProps({
   product: {
     type: Object,
