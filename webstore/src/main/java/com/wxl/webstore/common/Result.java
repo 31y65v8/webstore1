@@ -29,4 +29,12 @@ public class Result<T> {
         result.setMsg(msg);
         return result;
     }
+
+    // 错误响应（单个String参数）
+    public static <T> Result<T> error(String message) {
+        Result<T> result = new Result<>();
+        result.setCode(500); // 默认使用500错误码
+        result.setMsg(message);
+        return result;
+    }
 }

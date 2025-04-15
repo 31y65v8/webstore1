@@ -20,20 +20,9 @@
             <i class="fas fa-sign-out-alt"></i> 退出登录
           </button>
         </template>
-        <!-- 对于卖家角色显示卖家中心和退出登录按钮 -->
-        <template v-else-if="userRole === 'SELLER'">
-          <button class="seller-btn" @click="goToSellerCenter">
-            <i class="fas fa-store"></i> 卖家中心
-          </button>
-          <button class="logout-btn" @click="handleLogout">
-            <i class="fas fa-sign-out-alt"></i> 退出登录
-          </button>
-        </template>
-        <!-- 对于管理员角色显示管理中心和退出登录按钮 -->
-        <template v-else-if="userRole === 'ADMIN'">
-          <button class="admin-btn" @click="goToAdminCenter">
-            <i class="fas fa-cog"></i> 管理中心
-          </button>
+        
+        <!-- 默认情况下至少显示退出登录按钮 -->
+        <template v-else>
           <button class="logout-btn" @click="handleLogout">
             <i class="fas fa-sign-out-alt"></i> 退出登录
           </button>
@@ -60,6 +49,8 @@
       @close="showLoginModal = false"
       @success="handleLoginSuccess"
     />
+
+
     
     <RegisterModal 
       v-model:visible="showRegisterModal"
@@ -74,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/layout/Navbar.vue'
 import ProductGrid from '@/components/product/ProductGrid.vue'
@@ -91,30 +82,39 @@ const userRole = ref('')
 const router = useRouter()
 
 // 检查用户登录状态和角色
-const checkLoginStatus = async () => {
+/*const checkLoginStatus = async () => {
   const token = localStorage.getItem('token')
   
   if (token) {
-    isLoggedIn.value = true
-    
     try {
       // 配置请求头带上token
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       
       // 获取用户信息包括角色
       const response = await axios.get('/api/user/info')
-      userRole.value = response.data.role
+      console.log('API响应:', response.data) // 调试用
+      
+      // 正确的数据路径: response.data.data.role
+      if (response.data && response.data.code === 200 && response.data.data) {
+        isLoggedIn.value = true
+        userRole.value = response.data.data.role
+        console.log('获取到的角色:', userRole.value)
+      } else {
+        throw new Error('响应格式不正确')
+      }
     } catch (error) {
       console.error('获取用户信息失败:', error)
-      // 如果获取失败，可能是token无效，清除登录状态
       localStorage.removeItem('token')
       isLoggedIn.value = false
+      userRole.value = ''
     }
   } else {
     isLoggedIn.value = false
     userRole.value = ''
   }
-}
+  
+  console.log('最终状态 - 登录状态:', isLoggedIn.value, '用户角色:', userRole.value)
+}*/
 
 const handleCategoryChange = (category) => {
   currentCategory.value = category
@@ -124,10 +124,26 @@ const handleProductClick = (product) => {
   router.push({ name: 'ProductDetail', params: { id: product.id } })
 }
 
-const handleLoginSuccess = () => {
+/*const handleLoginSuccess = async () => {
   showLoginModal.value = false
-  checkLoginStatus() // 登录成功后重新检查状态
+  showLoginModal.value = false
+  isLoggedIn.value = true
+  userRole.value = userInfo.role  // login后返回的用户信息
+}*/
+const handleLoginSuccess = (userData) => {
+  const { token, role } = userData
+  isLoggedIn.value = true
+  userRole.value = role
+  localStorage.setItem('token', token)
+  localStorage.setItem('userRole', role)
+  showLoginModal.value = false
+  
+  // 延时检查状态
+  setTimeout(() => {
+    console.log('延时检查 - 登录状态:', isLoggedIn.value, '角色:', userRole.value)
+  }, 100)
 }
+
 
 const handleRegisterSuccess = () => {
   showRegisterModal.value = false
@@ -158,8 +174,19 @@ const goToAdminCenter = () => {
   router.push('/admin')
 }
 
-onMounted(() => {
+/*onMounted(() => {
   checkLoginStatus()
+})*/
+onMounted(() => {
+  // 读取本地存储的用户信息
+  const token = localStorage.getItem('token')
+  const role = localStorage.getItem('userRole')
+  
+  if (token && role) {
+    isLoggedIn.value = true
+    userRole.value = role
+    console.log('从localStorage恢复登录状态:', isLoggedIn.value, '角色:', userRole.value)
+  }
 })
 </script>
 

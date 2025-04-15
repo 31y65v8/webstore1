@@ -84,14 +84,17 @@ const handleSubmit = async () => {
     // 设置axios默认headers
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     
-    emit('success')
+    // 传递成功数据给父组件
+    emit('success', { token, role: formData.role })
 
-    // 根据角色跳转到不同页面
+    // 只有SELLER和ADMIN角色才跳转，CUSTOMER保留在当前页面
     if (formData.role === 'SELLER') {
       router.push('/seller')
-    } else {
-      router.push('/')
+    } else if (formData.role === 'ADMIN') {
+      router.push('/admin')
     }
+    // 如果是CUSTOMER，不做路由跳转，只关闭模态框
+    
   } catch (error) {
     console.error('登录失败:', error)
     alert('登录失败，请检查账号密码是否正确')

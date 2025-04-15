@@ -81,6 +81,7 @@ public class SecurityConfig {
                             "/api/product/products/category",
                             "/api/product/upload/image",
                             "/api/product/images/**",
+                            "/api/user/info",
                             "/error"  // 添加错误页面路径
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

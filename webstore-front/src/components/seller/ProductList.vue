@@ -127,17 +127,42 @@ const handleEditSuccess = () => {
 
 const handleDelete = async (product) => {
   if (!confirm(`确定要删除商品"${product.name}"吗？`)) {
-    return
+    return;
   }
 
   try {
-    await axios.delete(`/api/product/${product.id}`)
-    fetchProducts()
+    // 获取存储的JWT令牌
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('登录已过期，请重新登录');
+      return;
+    }
+
+    // 发送带有认证头的删除请求
+    await axios.delete(`/api/product/${product.id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    alert('商品删除成功');
+    fetchProducts(currentPage.value); // 刷新当前页
   } catch (error) {
-    console.error('删除商品失败:', error)
-    alert('删除商品失败，请重试')
+    console.error('删除商品失败:', error);
+    
+    // 提供更详细的错误信息给用户
+    let errorMessage = '删除商品失败，请重试';
+    if (error.response) {
+      if (error.response.status === 401 || error.response.status === 403) {
+        errorMessage = '您没有权限执行此操作';
+      } else if (error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message;
+      }
+    }
+    
+    alert(errorMessage);
   }
-}
+};
 
 // 监听刷新信号
 watch(() => props.refresh, () => {

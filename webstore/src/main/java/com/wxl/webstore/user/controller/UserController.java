@@ -14,6 +14,8 @@ import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 import com.wxl.webstore.common.Result;
 import io.jsonwebtoken.Claims;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -69,5 +71,31 @@ public class UserController {
             return Result.success("账号删除成功");
         }
         return Result.error(401, "无效的token");
+    }
+
+    @GetMapping("/info")
+    public Result<Map<String, Object>> getUserInfo(HttpServletRequest request) {
+        // 从请求头获取token
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            try {
+                // 解析token获取用户信息
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                String account = jwtUtil.getAccountFromToken(token);
+                UserRole role = jwtUtil.getUserRoleFromToken(token);
+                
+                // 创建返回数据
+                Map<String, Object> userInfo = new HashMap<>();
+                userInfo.put("userId", userId);
+                userInfo.put("account", account);
+                userInfo.put("role", role.name());
+                
+                return Result.success(userInfo);
+            } catch (Exception e) {
+                return Result.error(500, "无效的token: " + e.getMessage());
+            }
+        }
+        return Result.error(401, "未提供有效的token");
     }
 }
