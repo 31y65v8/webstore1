@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.cart.entity.Cart;
 import com.wxl.webstore.cart.service.CartService;
 import com.wxl.webstore.common.enums.OrderStatus;
+import com.wxl.webstore.common.service.RabbitMQSender;
 import com.wxl.webstore.orders.entity.OrderItem;
 import com.wxl.webstore.orders.entity.Orders;
 import com.wxl.webstore.orders.mapper.OrdersMapper;
@@ -12,11 +13,14 @@ import com.wxl.webstore.orders.service.OrderItemService;
 import com.wxl.webstore.orders.service.OrdersService;
 import com.wxl.webstore.product.entity.Product;
 import com.wxl.webstore.product.service.ProductService;
+import com.wxl.webstore.receiverInfo.entity.ReceiverInfo;
+import com.wxl.webstore.receiverInfo.service.ReceiverInfoService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,6 +51,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     @Autowired
     private CartService cartService;
 
+    @Autowired
+    private RabbitMQSender rabbitMQSender;
+    
+    @Autowired
+    private ReceiverInfoService receiverInfoService;
+
+   
+
     private String getProductName(Long productId) {
         // 实现获取商品名称的逻辑
         return productService.getProductNameById(productId);
@@ -56,10 +68,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         // 实现获取商品价格的逻辑
         return productService.getProductPriceById(productId);
     }
+
+    
         
     @Override
     @Transactional
-    public void createOrderFromCart(Long userId) {
+    public void createOrderFromCart(Long userId, BigDecimal frontEndTotalPrice) {
         // 获取选中的购物车项
         List<Cart> selectedCarts = cartService.getSelectedItems(userId);
             
@@ -74,11 +88,23 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
                 throw new RuntimeException("商品【" + product.getName() + "】库存不足，当前库存：" + product.getStorage());
            }
         }
-       
-        
+       // 计算后端总价
+    //BigDecimal backendTotalPrice = BigDecimal.ZERO;
+    //for (Cart cart : selectedCarts) {
+    //    BigDecimal price = getProductPrice(cart.getProductId());
+    //    BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(cart.getQuantity()));
+    //    backendTotalPrice = backendTotalPrice.add(itemTotal);
+    //}
+    
+    
+    
+        // 获取默认收货地址
+        Long defaultReceiverInfo = receiverInfoService.getDefaultReceiverInfo(userId);
         // 创建订单
         Orders order = new Orders();
+        order.setReceiverId(defaultReceiverInfo);
         order.setUserId(userId);
+        order.setTotalPrice(frontEndTotalPrice);
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
@@ -119,11 +145,16 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         for (OrderItem item : orderItems) {
             productService.decreaseStock(item.getProductId(), item.getQuantity());
         }
+
+        // 发送延迟消息，15分钟后取消未支付订单
+        log.info("准备发送订单取消延迟消息，订单ID: {}", order.getId());
+        rabbitMQSender.sendOrderCancelMessage(order.getId(), 15 * 60 * 1000);
+        log.info("订单取消延迟消息已发送");
     }
         
     @Override
     @Transactional
-    public void cancelOrder(Long orderId) {
+    public void cancelOrder(Long orderId, String cancelReason) {
         Orders order = this.getById(orderId);
         if (order == null) {
             throw new RuntimeException("订单不存在");
@@ -138,6 +169,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
                 // 更新订单状态
                 order.setUpdateTime(LocalDateTime.now());
                 order.setStatus(OrderStatus.CANCELLED);
+                order.setCancelReason(cancelReason);
                 this.updateById(order);
                 
                 // 恢复商品库存
@@ -158,6 +190,13 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         } else {
             throw new RuntimeException("订单已付款，无法取消");
         }
+    }
+
+    // 为了保持兼容性，重载原方法
+    @Override
+    @Transactional
+    public void cancelOrder(Long orderId) {
+        cancelOrder(orderId, "订单超时未支付，系统自动取消");
     }
 
     @Override
@@ -193,6 +232,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     @Override
     public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
         return orderItemService.getOrderItemsByOrderId(orderId);
+    }
+
+    @Override
+    public List<Orders> findExpiredPendingOrders(int minutes) {
+        QueryWrapper<Orders> queryWrapper = new QueryWrapper<>();
+        // 查找PENDING状态的订单
+        queryWrapper.eq("status", OrderStatus.PENDING);
+        // 查找创建时间早于指定分钟数的订单
+        LocalDateTime expirationTime = LocalDateTime.now().minusMinutes(minutes);
+        queryWrapper.lt("create_time", expirationTime);
+        return this.list(queryWrapper);
     }
     
     // 通知用户订单已发货

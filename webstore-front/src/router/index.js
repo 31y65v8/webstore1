@@ -3,6 +3,9 @@ import HomeView from '@/views/HomeView.vue'
 import SearchView from '@/views/SearchView.vue'
 import SellerView from '@/views/SellerView.vue'
 import ProductDetail from '@/views/ProductDetail.vue'
+import CustomerView from '@/views/CustomerView.vue'
+import CartView from '@/views/CartView.vue'
+import MyOrdersView from '@/views/MyOrdersView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,12 +27,34 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         roles: ['SELLER']
-      }
+      },
+      children: [
+        { 
+          path: 'browse-history',
+          component: () => import('@/components/seller/ViewBrowseHistory.vue')
+        },
+      ]
     },
     {
       path: '/product/:id',
       name: 'ProductDetail',
       component: ProductDetail
+    },
+    {
+      path: '/customer',
+      component: CustomerView
+    },
+    {
+      path: '/cart',
+      component: CartView
+    },
+    {
+      path: '/orders',
+      component: MyOrdersView,
+      meta: {
+        requiresAuth: true,
+        roles: ['CUSTOMER']
+      }
     }
   ]
 })

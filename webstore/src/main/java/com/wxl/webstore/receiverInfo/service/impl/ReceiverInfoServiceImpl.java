@@ -73,4 +73,145 @@ public class ReceiverInfoServiceImpl extends ServiceImpl<ReceiverInfoMapper, Rec
                 .orderByDesc(ReceiverInfo::getUpdateTime)); // 按更新时间降序
     }
 
+    /**
+     * 设置默认地址
+     * 将指定地址设置为默认，同时取消该用户其他地址的默认标记
+     * 
+     * @param userId 用户ID
+     * @param receiverId 要设置为默认的地址ID
+     * @return 操作是否成功
+     */
+    public boolean setDefaultAddress(Long userId, Long receiverId) {
+        // 1. 检查地址是否存在且属于该用户
+        ReceiverInfo receiverInfo = this.getOne(
+            new LambdaQueryWrapper<ReceiverInfo>()
+                .eq(ReceiverInfo::getId, receiverId)
+                .eq(ReceiverInfo::getUserId, userId)
+                .eq(ReceiverInfo::getIsDeleted, false)
+        );
+        
+        if (receiverInfo == null) {
+            return false; // 地址不存在或不属于该用户
+        }
+        
+        // 2. 取消该用户所有地址的默认标记
+        List<ReceiverInfo> userAddresses = this.list(
+            new LambdaQueryWrapper<ReceiverInfo>()
+                .eq(ReceiverInfo::getUserId, userId)
+                .eq(ReceiverInfo::getIsDeleted, false)
+                .eq(ReceiverInfo::getIsDefault, true)
+        );
+        
+        for (ReceiverInfo address : userAddresses) {
+            address.setIsDefault(false);
+            address.setUpdateTime(LocalDateTime.now());
+            this.updateById(address);
+        }
+        
+        // 3. 将指定地址设为默认
+        receiverInfo.setIsDefault(true);
+        receiverInfo.setUpdateTime(LocalDateTime.now());
+        
+        return this.updateById(receiverInfo);
+    }
+
+    /**
+     * 部分更新地址信息
+     * 只更新非空字段
+     * 
+     * @param receiverId 地址ID
+     * @param updateInfo 包含要更新字段的对象
+     * @param userId 用户ID（用于验证地址所有权）
+     * @return 操作是否成功
+     */
+    public boolean updateReceiverInfoPartially(Long receiverId, ReceiverInfo updateInfo, Long userId) {
+        // 1. 检查地址是否存在且属于该用户
+        ReceiverInfo existingInfo = this.getOne(
+            new LambdaQueryWrapper<ReceiverInfo>()
+                .eq(ReceiverInfo::getId, receiverId)
+                .eq(ReceiverInfo::getUserId, userId)
+                .eq(ReceiverInfo::getIsDeleted, false)
+        );
+        
+        if (existingInfo == null) {
+            return false; // 地址不存在或不属于该用户
+        }
+        
+        // 2. 只更新非空字段
+        boolean needUpdate = false;
+        
+        if (updateInfo.getReceiverName() != null) {
+            existingInfo.setReceiverName(updateInfo.getReceiverName());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getReceiverPhone() != null) {
+            existingInfo.setReceiverPhone(updateInfo.getReceiverPhone());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getProvinceCode() != null) {
+            existingInfo.setProvinceCode(updateInfo.getProvinceCode());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getProvinceName() != null) {
+            existingInfo.setProvinceName(updateInfo.getProvinceName());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getCityCode() != null) {
+            existingInfo.setCityCode(updateInfo.getCityCode());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getCityName() != null) {
+            existingInfo.setCityName(updateInfo.getCityName());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getDistrictCode() != null) {
+            existingInfo.setDistrictCode(updateInfo.getDistrictCode());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getDistrictName() != null) {
+            existingInfo.setDistrictName(updateInfo.getDistrictName());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getDetail() != null) {
+            existingInfo.setDetail(updateInfo.getDetail());
+            needUpdate = true;
+        }
+        
+        if (updateInfo.getLabel() != null) {
+            existingInfo.setLabel(updateInfo.getLabel());
+            needUpdate = true;
+        }
+        
+        // 如果没有字段需要更新，则直接返回true
+        if (!needUpdate) {
+            return true;
+        }
+        
+        // 3. 更新时间戳
+        existingInfo.setUpdateTime(LocalDateTime.now());
+        
+        // 4. 执行更新
+        return this.updateById(existingInfo);
+    }
+
+    //获取默认地址
+    public Long getDefaultReceiverInfo(Long userId) {
+        ReceiverInfo defaultReceiverInfo = this.getOne(new LambdaQueryWrapper<ReceiverInfo>()
+                .eq(ReceiverInfo::getUserId, userId)
+                .eq(ReceiverInfo::getIsDefault, true)
+                .eq(ReceiverInfo::getIsDeleted, false));
+        if (defaultReceiverInfo == null) {
+            throw new RuntimeException("请先设置默认收货地址");
+        }
+        return defaultReceiverInfo.getId();
+    }
+
 }

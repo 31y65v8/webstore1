@@ -1,6 +1,9 @@
 <template>
   <div class="seller-dashboard">
-    <h1>销售人员管理面板</h1>
+    <button class="back-button" @click="goToHome">
+        <span>&larr;</span> 
+      </button>
+    <h1>管理中心</h1>
     
     <div class="dashboard-actions">
       <button class="add-product-btn" @click="showAddProductModal = true">
@@ -41,10 +44,15 @@ const handleProductAdded = () => {
   refreshTrigger.value++
 }
 
+
 const handleLogout = () => {
   // 清除本地存储中的 token
   localStorage.removeItem('token')
   // 重定向到主页
+  router.push('/')
+}
+
+const goToHome = () => {
   router.push('/')
 }
 </script>

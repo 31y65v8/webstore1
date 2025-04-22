@@ -8,12 +8,18 @@ import com.wxl.webstore.product.service.*;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.product.entity.Product;
 import com.wxl.webstore.product.service.ProductService;
+import com.wxl.webstore.common.utils.JwtUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.net.http.HttpRequest;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,8 +39,19 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements Ca
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @Override
-    public List<CartDTO> getCartItems(Long userId) {
+    public List<CartDTO> getCartItems(HttpServletRequest request) {
+        // 从请求头获取token
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            throw new RuntimeException("未授权的请求");
+        }
+        token = token.substring(7);
+        Long userId = jwtUtil.getUserIdFromToken(token);
+        
         // 查询购物车数据
         List<Cart> cartItems = cartMapper.selectList(new LambdaQueryWrapper<Cart>()
                 .eq(Cart::getUserId, userId));
@@ -74,6 +91,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements Ca
             newCart.setUserId(userId);
             newCart.setProductId(productId);
             newCart.setQuantity(quantity);
+            newCart.setSelected(false);
             cartMapper.insert(newCart);
         }
 
@@ -139,7 +157,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements Ca
     @Override
     public List<Cart> getSelectedItems(Long userId) {
         QueryWrapper<Cart> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId).eq("selected", true);
+        queryWrapper.eq("user_id", userId).eq("selected", 1);
         return cartMapper.selectList(queryWrapper);
     }
 
@@ -148,7 +166,7 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements Ca
     public void clearSelectedItems(Long userId) {
         cartMapper.delete(new LambdaQueryWrapper<Cart>()
                 .eq(Cart::getUserId, userId)
-                .eq(Cart::getSelected, true));
+                .eq(Cart::getSelected, 1));
     }
 
 }

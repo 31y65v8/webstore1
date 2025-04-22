@@ -9,18 +9,18 @@
     </div>
     
     <div v-else class="products-grid">
-      <div v-for="product in products" :key="product.id" class="product-card">
+      <div v-for="product in products" :key="product.productId" class="product-card">
         <div class="product-image">
-          <img :src="product.imgurl" :alt="product.name">
+          <img :src="product.productImage" :alt="product.productName">
         </div>
         <div class="product-info">
-          <h3>{{ product.name }}</h3>
+          <h3>{{ product.productName }}</h3>
           <div class="product-meta">
-            <span class="price">¥{{ product.price }}</span>
-            <span class="stock">库存: {{ product.storage }}</span>
+            <span class="price">¥{{ product.productPrice }}</span>
+            <span class="stock">库存: {{ product.productStorage }}</span>
           </div>
           <div class="product-category">
-            分类: {{ getCategoryLabel(product.category) }}
+            分类: {{ getCategoryLabel(product.productCategory) }}
           </div>
           <div class="product-actions">
             <button @click="handleEdit(product)" class="edit-btn">编辑</button>
@@ -93,18 +93,29 @@ const getCategoryLabel = (category) => {
 const fetchProducts = async (page = 1) => {
   loading.value = true
   try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return
+    }
+    
     const response = await axios.get('/api/product/seller/products', {
-      params: {
-        pageNum: page,
-        pageSize
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     })
-    const data = response.data.data
-    products.value = data.records
-    currentPage.value = data.current
-    totalPages.value = data.pages
+    
+    const responseData = response.data.data || {}
+    products.value = responseData.records || []
+    console.log('获取到的商品数据:', products.value)
+    
+    currentPage.value = parseInt(responseData.current) || 1
+    totalPages.value = parseInt(responseData.pages) || 1
+    
+    if (totalPages.value === 0 && products.value.length > 0) {
+      totalPages.value = 1
+    }
   } catch (error) {
-    console.error('获取商品列表失败:', error)
+    console.error('获取商品失败:', error)
   } finally {
     loading.value = false
   }
@@ -116,7 +127,7 @@ const handlePageChange = (page) => {
 }
 
 const handleEdit = (product) => {
-  editingProductId.value = product.id
+  editingProductId.value = product.productId
   showEditModal.value = true
 }
 
@@ -126,31 +137,28 @@ const handleEditSuccess = () => {
 }
 
 const handleDelete = async (product) => {
-  if (!confirm(`确定要删除商品"${product.name}"吗？`)) {
+  if (!confirm(`确定要删除商品"${product.productName}"吗？`)) {
     return;
   }
 
   try {
-    // 获取存储的JWT令牌
     const token = localStorage.getItem('token');
     if (!token) {
       alert('登录已过期，请重新登录');
       return;
     }
 
-    // 发送带有认证头的删除请求
-    await axios.delete(`/api/product/${product.id}`, {
+    await axios.delete(`/api/products/${product.productId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
     
     alert('商品删除成功');
-    fetchProducts(currentPage.value); // 刷新当前页
+    fetchProducts(currentPage.value);
   } catch (error) {
     console.error('删除商品失败:', error);
     
-    // 提供更详细的错误信息给用户
     let errorMessage = '删除商品失败，请重试';
     if (error.response) {
       if (error.response.status === 401 || error.response.status === 403) {
@@ -164,7 +172,6 @@ const handleDelete = async (product) => {
   }
 };
 
-// 监听刷新信号
 watch(() => props.refresh, () => {
   fetchProducts(1)
 })

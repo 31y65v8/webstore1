@@ -57,9 +57,11 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useAuth } from '@/composables/useAuth'
 
 const emit = defineEmits(['close', 'success', 'show-register'])
 const router = useRouter()
+const { login } = useAuth()
 
 const formData = reactive({
   account: '',
@@ -74,27 +76,25 @@ const handleSubmit = async () => {
 
   try {
     isSubmitting.value = true
-    const response = await axios.post('/api/user/login', formData)
     
-    // 保存token和用户角色
-    const token = response.data.data
-    localStorage.setItem('token', token)
-    localStorage.setItem('userRole', formData.role)
+    // 使用 useAuth 的 login 方法
+    const success = await login({
+      account: formData.account,
+      password: formData.password,
+      role: formData.role
+    })
     
-    // 设置axios默认headers
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    
-    // 传递成功数据给父组件
-    emit('success', { token, role: formData.role })
-
-    // 只有SELLER和ADMIN角色才跳转，CUSTOMER保留在当前页面
-    if (formData.role === 'SELLER') {
-      router.push('/seller')
-    } else if (formData.role === 'ADMIN') {
-      router.push('/admin')
+    if (success) {
+      // 告知父组件登录成功，但不传递用户数据，因为useAuth已经设置了全局状态
+      emit('success')
+      emit('close') // 关闭登录模态框
+       // 对于CUSTOMER角色，强制刷新页面以显示导航栏的变化
+       if (formData.role === 'CUSTOMER') {
+        window.location.reload()
+      }
+    } else {
+      alert('登录失败，请检查账号密码是否正确')
     }
-    // 如果是CUSTOMER，不做路由跳转，只关闭模态框
-    
   } catch (error) {
     console.error('登录失败:', error)
     alert('登录失败，请检查账号密码是否正确')

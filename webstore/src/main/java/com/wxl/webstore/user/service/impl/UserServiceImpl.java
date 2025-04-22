@@ -117,4 +117,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         return count(queryWrapper) > 0;
     }
+
+    @Override
+    public User getUserInfo(Long userId) {
+        return getById(userId);
+    }
 }

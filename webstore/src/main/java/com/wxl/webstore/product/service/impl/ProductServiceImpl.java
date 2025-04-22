@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.common.enums.ProductCategory;
 import com.wxl.webstore.product.dto.ProductUpdateDTO;
 import com.wxl.webstore.product.entity.Product;
+import com.wxl.webstore.product.dto.ProductDTO;
 import com.wxl.webstore.product.mapper.ProductMapper;
 import com.wxl.webstore.product.service.ProductService;
 import com.wxl.webstore.common.utils.JwtUtil;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -235,18 +237,11 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Override
     @Transactional
-    public Product getProductById(Long id) {
-        // 获取当前登录的卖家ID
-        String token = SecurityContextHolder.getContext().getAuthentication().getCredentials().toString();
-        Long sellerId = jwtUtil.getUserIdFromToken(token);
-        
-        // 查询商品
-        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Product::getId, id)
-                   .eq(Product::getSellerId, sellerId)
-                   .eq(Product::getIsDeleted, false);
-        
-        return this.getOne(queryWrapper);
+    public Product getProductById(Long productId) {
+        // 只按productId查询，不要加seller_id条件
+        return productMapper.selectOne(new LambdaQueryWrapper<Product>()
+                .eq(Product::getId, productId)
+                .eq(Product::getIsDeleted, false));
     }
 
     @Override
@@ -336,5 +331,53 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
                 lock.unlock();
             }
         }
+    }
+
+    @Override
+    @Transactional
+    public Page<ProductDTO> getPageOfProductDTOs(int pageNum, int pageSize) {
+        // 获取原始商品分页
+        Page<Product> productPage = getPageOfProducts(pageNum, pageSize);
+        
+        // 转换为DTO分页
+        return convertToProductDTOPage(productPage);
+    }
+
+    @Override
+    @Transactional
+    public Page<ProductDTO> getPageByCategoryDTOs(int pageNum, int pageSize, ProductCategory category) {
+        Page<Product> productPage = getPageByCategory(pageNum, pageSize, category);
+        return convertToProductDTOPage(productPage);
+    }
+
+    @Override
+    @Transactional
+    public Page<ProductDTO> getProductsByNameDTOs(int pageNum, int pageSize, String name) {
+        Page<Product> productPage = getProductsByName(pageNum, pageSize, name);
+        return convertToProductDTOPage(productPage);
+    }
+
+    @Override
+    @Transactional
+    public List<ProductDTO> getProductsByIdsDTOs(List<Long> productIds) {
+        List<Product> products = getProductsByIds(productIds);
+        return products.stream()
+                .map(ProductDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    // 辅助方法：将 Product 分页转换为 ProductDTO 分页
+    private Page<ProductDTO> convertToProductDTOPage(Page<Product> productPage) {
+        Page<ProductDTO> dtoPage = new Page<>(
+                productPage.getCurrent(),
+                productPage.getSize(),
+                productPage.getTotal());
+        
+        List<ProductDTO> dtoList = productPage.getRecords().stream()
+                .map(ProductDTO::new)
+                .collect(Collectors.toList());
+        
+        dtoPage.setRecords(dtoList);
+        return dtoPage;
     }
 }

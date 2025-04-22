@@ -64,7 +64,17 @@ const fetchProducts = async () => {
     }
 
     const response = await axios.get(url, { params })
-    products.value = response.data.records
+    
+    // 将后端返回的字段名映射为前端组件需要的字段名
+    products.value = response.data.records.map(product => ({
+      id: product.productId,
+      name: product.productName,
+      price: product.productPrice,
+      imgurl: product.productImage,
+      description: product.productDescription || '',
+      sales: product.productSales || 0
+    }))
+    
     totalPages.value = response.data.pages
   } catch (error) {
     console.error('获取商品列表失败:', error)
@@ -72,7 +82,6 @@ const fetchProducts = async () => {
     emit('loading-change', false)
   }
   console.log('商品数据：', products.value)
-
 }
 
 const handlePageChange = (page) => {

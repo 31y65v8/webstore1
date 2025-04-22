@@ -6,37 +6,7 @@
       @show-register="showRegisterModal = true"
     />
 
-    <div class="user-actions">
-      <template v-if="isLoggedIn">
-        <!-- 对于顾客角色显示个人中心、购物车和退出登录按钮 -->
-        <template v-if="userRole === 'CUSTOMER'">
-          <button class="user-btn" @click="goToUserInfo">
-            <i class="fas fa-user"></i> 个人中心
-          </button>
-          <button class="cart-btn" @click="goToCart">
-            <i class="fas fa-shopping-cart"></i> 购物车
-          </button>
-          <button class="logout-btn" @click="handleLogout">
-            <i class="fas fa-sign-out-alt"></i> 退出登录
-          </button>
-        </template>
-        
-        <!-- 默认情况下至少显示退出登录按钮 -->
-        <template v-else>
-          <button class="logout-btn" @click="handleLogout">
-            <i class="fas fa-sign-out-alt"></i> 退出登录
-          </button>
-        </template>
-      </template>
-      <template v-else>
-        <button class="login-btn" @click="showLoginModal = true">
-          <i class="fas fa-sign-in-alt"></i> 登录
-        </button>
-        <button class="register-btn" @click="showRegisterModal = true">
-          <i class="fas fa-user-plus"></i> 注册
-        </button>
-      </template>
-    </div>
+    
 
     <ProductGrid
       :category="currentCategory"
@@ -65,56 +35,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/layout/Navbar.vue'
 import ProductGrid from '@/components/product/ProductGrid.vue'
 import LoginModal from '@/components/auth/LoginModal.vue'
 import RegisterModal from '@/components/auth/RegisterModal.vue'
 import axios from 'axios'
+import { useAuth } from '@/composables/useAuth'
 
 const currentCategory = ref('ALL')
 const isLoading = ref(false)
 const showLoginModal = ref(false)
 const showRegisterModal = ref(false)
-const isLoggedIn = ref(false)
-const userRole = ref('')
 const router = useRouter()
 
-// 检查用户登录状态和角色
-/*const checkLoginStatus = async () => {
-  const token = localStorage.getItem('token')
-  
-  if (token) {
-    try {
-      // 配置请求头带上token
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      
-      // 获取用户信息包括角色
-      const response = await axios.get('/api/user/info')
-      console.log('API响应:', response.data) // 调试用
-      
-      // 正确的数据路径: response.data.data.role
-      if (response.data && response.data.code === 200 && response.data.data) {
-        isLoggedIn.value = true
-        userRole.value = response.data.data.role
-        console.log('获取到的角色:', userRole.value)
-      } else {
-        throw new Error('响应格式不正确')
-      }
-    } catch (error) {
-      console.error('获取用户信息失败:', error)
-      localStorage.removeItem('token')
-      isLoggedIn.value = false
-      userRole.value = ''
-    }
-  } else {
-    isLoggedIn.value = false
-    userRole.value = ''
-  }
-  
-  console.log('最终状态 - 登录状态:', isLoggedIn.value, '用户角色:', userRole.value)
-}*/
+// 使用统一的useAuth
+const { isLoggedIn, username, userRole, login, logout } = useAuth()
 
 const handleCategoryChange = (category) => {
   currentCategory.value = category
@@ -124,26 +61,23 @@ const handleProductClick = (product) => {
   router.push({ name: 'ProductDetail', params: { id: product.id } })
 }
 
-/*const handleLoginSuccess = async () => {
-  showLoginModal.value = false
-  showLoginModal.value = false
-  isLoggedIn.value = true
-  userRole.value = userInfo.role  // login后返回的用户信息
-}*/
 const handleLoginSuccess = (userData) => {
-  const { token, role } = userData
-  isLoggedIn.value = true
-  userRole.value = role
-  localStorage.setItem('token', token)
-  localStorage.setItem('userRole', role)
-  showLoginModal.value = false
+  showLoginModal.value = false;
   
-  // 延时检查状态
-  setTimeout(() => {
-    console.log('延时检查 - 登录状态:', isLoggedIn.value, '角色:', userRole.value)
-  }, 100)
+  // 如果有直接传递的角色信息，使用它
+  if (userData && userData.role) {
+    if (userData.role === 'SELLER') {
+      router.push('/seller');
+    } else if (userData.role === 'ADMIN') {
+      router.push('/admin');
+    }
+    // CUSTOMER角色在LoginModal中已处理刷新
+  }
+  // 没有角色信息时，默认刷新
+  else {
+    window.location.reload();
+  }
 }
-
 
 const handleRegisterSuccess = () => {
   showRegisterModal.value = false
@@ -151,10 +85,7 @@ const handleRegisterSuccess = () => {
 }
 
 const handleLogout = () => {
-  // 清除本地存储中的 token
-  localStorage.removeItem('token')
-  isLoggedIn.value = false
-  // 重定向到主页
+  logout() // 调用统一的logout方法
   router.push('/')
 }
 
@@ -173,21 +104,6 @@ const goToSellerCenter = () => {
 const goToAdminCenter = () => {
   router.push('/admin')
 }
-
-/*onMounted(() => {
-  checkLoginStatus()
-})*/
-onMounted(() => {
-  // 读取本地存储的用户信息
-  const token = localStorage.getItem('token')
-  const role = localStorage.getItem('userRole')
-  
-  if (token && role) {
-    isLoggedIn.value = true
-    userRole.value = role
-    console.log('从localStorage恢复登录状态:', isLoggedIn.value, '角色:', userRole.value)
-  }
-})
 </script>
 
 <style scoped>

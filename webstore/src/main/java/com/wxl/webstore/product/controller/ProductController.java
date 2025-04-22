@@ -4,8 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wxl.webstore.common.enums.ProductCategory;
 import com.wxl.webstore.product.dto.ProductUpdateDTO;
 import com.wxl.webstore.product.entity.Product;
+import com.wxl.webstore.product.dto.ProductDTO;
 import com.wxl.webstore.product.service.ProductService;
-import com.wxl.webstore.common.response.Result;
+import com.wxl.webstore.common.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +16,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -38,25 +41,25 @@ public class ProductController {
 
     // 获取首页商品分页数据
     @GetMapping("/products")
-    public Page<Product> getProductsPage(@RequestParam(defaultValue = "1") int pageNum,
+    public Page<ProductDTO> getProductsPage(@RequestParam(defaultValue = "1") int pageNum,
                                          @RequestParam(defaultValue = "10") int pageSize) {
-        return productService.getPageOfProducts(pageNum, pageSize);
+        return productService.getPageOfProductDTOs(pageNum, pageSize);
     }
 
     // 获取按照分类分页显示商品
     @GetMapping("/products/category")
-    public Page<Product> getProductsByCategory(@RequestParam(defaultValue = "1") int pageNum,
-                                               @RequestParam(defaultValue = "10") int pageSize,
-                                               @RequestParam ProductCategory category) {
-        return productService.getPageByCategory(pageNum, pageSize, category);
+    public Page<ProductDTO> getProductsByCategory(@RequestParam(defaultValue = "1") int pageNum,
+                                           @RequestParam(defaultValue = "10") int pageSize,
+                                           @RequestParam ProductCategory category) {
+        return productService.getPageByCategoryDTOs(pageNum, pageSize, category);
     }
 
     // 获取商品名称模糊搜索的分页结果
     @GetMapping("/products/search")
-    public Page<Product> searchProductsByName(@RequestParam(defaultValue = "1") int pageNum,
+    public Page<ProductDTO> searchProductsByName(@RequestParam(defaultValue = "1") int pageNum,
                                               @RequestParam(defaultValue = "10") int pageSize,
                                               @RequestParam String name) {
-        return productService.getProductsByName(pageNum, pageSize, name);
+        return productService.getProductsByNameDTOs(pageNum, pageSize, name);
     }
 
     // 卖家上传商品图片
@@ -103,11 +106,10 @@ public class ProductController {
     // 卖家添加新商品
     @PostMapping("/add")
     @PreAuthorize("hasRole('SELLER')")
-    public Result<Product> addProduct(@RequestBody Product product) {
+    public Result<ProductDTO> addProduct(@RequestBody Product product) {
         try {
-            // 设置商品创建时间等信息在Service层处理
             Product savedProduct = productService.addProduct(product);
-            return Result.success(savedProduct);
+            return Result.success(new ProductDTO(savedProduct));
         } catch (Exception e) {
             return Result.error("添加商品失败：" + e.getMessage());
         }
@@ -116,12 +118,12 @@ public class ProductController {
     // 获取卖家的商品列表
     @GetMapping("/seller/products")
     @PreAuthorize("hasRole('SELLER')")
-    public Result<Page<Product>> getSellerProducts(
+    public Result<Page<ProductDTO>> getSellerProducts(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
         try {
             Page<Product> products = productService.getSellerProducts(pageNum, pageSize);
-            return Result.success(products);
+            return Result.success(convertToProductDTOPage(products));
         } catch (Exception e) {
             return Result.error("获取商品列表失败：" + e.getMessage());
         }
@@ -130,18 +132,10 @@ public class ProductController {
     // 更新商品信息
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
-    public Result<Product> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO updateDTO) {
-        /*try {
-            // 确保更新的是ID匹配的商品
-            product.setId(id);
-            Product updatedProduct = productService.updateProduct(product);
-            return Result.success(updatedProduct);
-        } catch (Exception e) {
-            return Result.error("更新商品失败：" + e.getMessage());
-        }*/
+    public Result<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO updateDTO) {
         try {
             Product updatedProduct = productService.updateProductPartial(id, updateDTO);
-            return Result.success(updatedProduct);
+            return Result.success(new ProductDTO(updatedProduct));
         } catch (Exception e) {
             return Result.error("更新商品失败：" + e.getMessage());
         }
@@ -162,12 +156,26 @@ public class ProductController {
     // 获取单个商品详情
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
-    public Result<Product> getProduct(@PathVariable Long id) {
+    public Result<ProductDTO> getProduct(@PathVariable Long id) {
         try {
             Product product = productService.getProductById(id);
-            return Result.success(product);
+            return Result.success(new ProductDTO(product));
         } catch (Exception e) {
             return Result.error("获取商品详情失败：" + e.getMessage());
         }
+    }
+
+    private Page<ProductDTO> convertToProductDTOPage(Page<Product> productPage) {
+        Page<ProductDTO> dtoPage = new Page<>(
+                productPage.getCurrent(),
+                productPage.getSize(),
+                productPage.getTotal());
+        
+        List<ProductDTO> records = productPage.getRecords().stream()
+                .map(ProductDTO::new)
+                .collect(Collectors.toList());
+        
+        dtoPage.setRecords(records);
+        return dtoPage;
     }
 }

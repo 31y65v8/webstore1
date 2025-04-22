@@ -34,7 +34,13 @@ private static final long serialVersionUID = 1L;
     private LocalDateTime createTime;
     @TableField("update_time")
     private LocalDateTime updateTime;
-    @TableField("is_deleted")
+    @TableField("is_deleted")//用户是否手动删除历史订单记录
     @TableLogic
     private Boolean isDeleted;
+    @TableField("cancel_reason")
+    private String cancelReason;
+    @TableField("delete_time")
+    private LocalDateTime deleteTime;
+    
+    
 }

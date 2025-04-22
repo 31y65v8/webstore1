@@ -25,7 +25,39 @@
       </template>
       <template v-else>
         <span>欢迎, {{ username }}</span>
-        <button @click="handleLogout">退出</button>
+        
+        <!-- 对于顾客角色显示个人中心、购物车和退出登录按钮 -->
+        <template v-if="userRole === 'CUSTOMER'">
+          <button class="user-btn" @click="goToUserInfo">
+            <i class="fas fa-user"></i> 个人中心
+          </button>
+          <button class="cart-btn" @click="goToCart">
+            <i class="fas fa-shopping-cart"></i> 购物车
+          </button>
+          <button class="logout-btn" @click="handleLogout">
+            <i class="fas fa-sign-out-alt"></i> 退出登录
+          </button>
+        </template>
+        
+        <!-- 添加卖家角色导航选项 -->
+        <template v-else-if="userRole === 'SELLER'">
+          <button class="seller-btn" @click="goToSellerCenter">
+            <i class="fas fa-store"></i> 卖家中心
+          </button>
+          <button class="logout-btn" @click="handleLogout">
+            <i class="fas fa-sign-out-alt"></i> 退出登录
+          </button>
+        </template>
+        
+        <!-- 添加管理员角色导航选项 -->
+        <template v-else-if="userRole === 'ADMIN'">
+          <button class="admin-btn" @click="goToAdminCenter">
+            <i class="fas fa-cog"></i> 管理中心
+          </button>
+          <button class="logout-btn" @click="handleLogout">
+            <i class="fas fa-sign-out-alt"></i> 退出登录
+          </button>
+        </template>
       </template>
     </div>
   </nav>
@@ -39,7 +71,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const emit = defineEmits(['category-change', 'show-login', 'show-register'])
 
-const { isLoggedIn, username, logout } = useAuth()
+const { isLoggedIn, username, userRole, logout } = useAuth()
 
 const searchQuery = ref('')
 const currentCategory = ref('ALL')
@@ -68,8 +100,25 @@ const handleCategorySelect = (category) => {
   emit('category-change', category.value)
 }
 
+const goToUserInfo = () => {
+  router.push('/customer')
+}
+
+const goToCart = () => {
+  router.push('/cart')
+}
+
+const goToSellerCenter = () => {
+  router.push('/seller')
+}
+
+const goToAdminCenter = () => {
+  router.push('/admin')
+}
+
 const handleLogout = () => {
   logout()
+  router.push('/')
 }
 </script>
 
@@ -105,7 +154,7 @@ const handleLogout = () => {
   padding: 0.5rem 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  width: 200px;
+  width: 150px;
   font-size: 0.9rem;
 }
 

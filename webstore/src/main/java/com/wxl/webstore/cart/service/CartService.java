@@ -2,6 +2,9 @@ package com.wxl.webstore.cart.service;
 
 import com.wxl.webstore.cart.dto.CartDTO;
 import com.wxl.webstore.cart.entity.Cart;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -16,7 +19,7 @@ import java.util.List;
  */
 public interface CartService extends IService<Cart> {
     //展示购物车
-    List<CartDTO> getCartItems(Long userId);
+    List<CartDTO> getCartItems(HttpServletRequest request);
     //加入购物车
     void addToCart(Long userId, Long productId, Integer quantity);
     //从购物车删除

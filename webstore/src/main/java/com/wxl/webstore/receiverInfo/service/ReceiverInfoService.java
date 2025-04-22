@@ -26,4 +26,12 @@ public interface ReceiverInfoService extends IService<ReceiverInfo> {
     //查找当前用户所有未删除的收货信息
     List<ReceiverInfo> getCustomerReceiverInfos(Long userId);
 
+    //设置默认地址
+    boolean setDefaultAddress(Long userId, Long receiverId);
+
+    //部分更新地址信息
+    boolean updateReceiverInfoPartially(Long receiverId, ReceiverInfo updateInfo, Long userId);
+
+    //获取默认地址
+    Long getDefaultReceiverInfo(Long userId);
 }

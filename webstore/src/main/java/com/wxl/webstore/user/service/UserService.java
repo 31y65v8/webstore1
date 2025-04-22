@@ -47,4 +47,11 @@ public interface UserService extends IService<User> {
      * @return 是否存在
      */
     boolean existsByAccountAndRole(String account, UserRole role);
+
+    /**
+     * 获取用户信息
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    User getUserInfo(Long userId);
 }

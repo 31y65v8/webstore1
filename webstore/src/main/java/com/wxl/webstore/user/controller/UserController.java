@@ -16,6 +16,7 @@ import com.wxl.webstore.common.Result;
 import io.jsonwebtoken.Claims;
 import java.util.HashMap;
 import java.util.Map;
+import com.wxl.webstore.user.dto.UserDTO;
 
 /**
  * <p>
@@ -74,28 +75,32 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public Result<Map<String, Object>> getUserInfo(HttpServletRequest request) {
+    public Result<UserDTO> getUserInfo(HttpServletRequest request) {
         // 从请求头获取token
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
             try {
-                // 解析token获取用户信息
+                // 从token中获取用户ID
                 Long userId = jwtUtil.getUserIdFromToken(token);
-                String account = jwtUtil.getAccountFromToken(token);
-                UserRole role = jwtUtil.getUserRoleFromToken(token);
                 
-                // 创建返回数据
-                Map<String, Object> userInfo = new HashMap<>();
-                userInfo.put("userId", userId);
-                userInfo.put("account", account);
-                userInfo.put("role", role.name());
+                // 获取用户实体
+                User user = userService.getUserInfo(userId);
                 
-                return Result.success(userInfo);
-            } catch (Exception e) {
-                return Result.error(500, "无效的token: " + e.getMessage());
+                // 将实体转换为DTO
+                UserDTO userDTO = UserDTO.fromEntity(user);
+                
+                // 返回DTO而不是实体
+                return Result.success(userDTO);
+            } catch (RuntimeException e) {
+                // 捕获RuntimeException，包括token过期的异常
+                if (e.getMessage() != null && e.getMessage().contains("Token已过期")) {
+                    return Result.error(401, "Token已过期，请重新登录");
+                }
+                // 其他JWT异常
+                return Result.error(401, "无效的token: " + e.getMessage());
             }
         }
-        return Result.error(401, "未提供有效的token");
+        return Result.error(401, "未授权的请求");
     }
 }
