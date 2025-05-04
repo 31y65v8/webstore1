@@ -22,11 +22,11 @@ import org.springframework.stereotype.Service;
 public class BrowseServiceImpl extends ServiceImpl<BrowseMapper, Browse> implements BrowseService {
 
     @Override
-    public void recordBrowse(Long productId, Long userId, Integer duration) {
+    public void recordBrowse(Long productId, Long userId, Integer duration, String clickTime) {
         Browse browse = new Browse();
         browse.setProductId(productId);
         browse.setUserId(userId);
-        browse.setTime(LocalDateTime.now());
+        browse.setTime(LocalDateTime.parse(clickTime));
         browse.setCreateTime(LocalDateTime.now());
         
         // 设置停留时间

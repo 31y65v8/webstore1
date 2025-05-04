@@ -79,8 +79,6 @@ const orderTabs = [
   { status: 'ALL', label: '全部' },
   { status: 'PENDING', label: '待支付' },
   { status: 'PAID', label: '已支付' },
-  { status: 'SHIPPED', label: '已发货' },
-  { status: 'DELIVERED', label: '已送达' },
   { status: 'CANCELLED', label: '已取消' }
 ]
 
@@ -127,8 +125,6 @@ const getOrderStatusText = (status) => {
   switch (status) {
     case 'PENDING': return '待支付'
     case 'PAID': return '已支付'
-    case 'SHIPPED': return '已发货'
-    case 'DELIVERED': return '已送达'
     case 'CANCELLED': return '已取消'
     default: return status
   }
@@ -223,8 +219,22 @@ const cancelOrder = async (orderId) => {
 
 // 支付订单（模拟）
 const payOrder = async (orderId) => {
-  alert('跳转到支付页面...')
-  // 这里可以实现跳转到支付页面的逻辑
+  if (!confirm('确认支付订单吗？')) return;
+  
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(`/api/orders/${orderId}/pay`, {}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    alert('支付成功！');
+    fetchOrders(); // 刷新订单列表
+  } catch (error) {
+    console.error('支付订单失败:', error);
+    alert(`支付失败: ${error.response?.data?.message || error.message}`);
+  }
 }
 
 // 确认收货

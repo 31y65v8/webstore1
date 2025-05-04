@@ -1,11 +1,16 @@
 package com.wxl.webstore.orders.controller;
 
+import com.wxl.webstore.common.enums.OrderItemStatus;
 import com.wxl.webstore.common.enums.OrderStatus;
 import com.wxl.webstore.common.response.Result;
 import com.wxl.webstore.orders.entity.OrderItem;
 import com.wxl.webstore.orders.entity.Orders;
 import com.wxl.webstore.orders.service.OrdersService;
 import com.wxl.webstore.common.utils.JwtUtil;
+import com.wxl.webstore.log.operationlog.annotation.OperationLogAnnoce;
+import com.wxl.webstore.log.purchaselog.service.PurchaseLogService;
+import com.wxl.webstore.product.entity.Product;
+import com.wxl.webstore.product.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +40,12 @@ public class OrdersController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private PurchaseLogService purchaseLogService;
+
+    @Autowired
+    private ProductService productService;
 
     /*
      * 从请求头获取token并解析userId
@@ -95,7 +106,8 @@ public class OrdersController {
      * 更新订单状态
      */
     @PutMapping("/status/{orderId}")
-    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SELLER')")
+    @OperationLogAnnoce(module = "订单模块", operation = "更新订单状态")
     public Result<Void> updateOrderStatus(
             @PathVariable Long orderId, 
             @RequestParam OrderStatus newStatus) {
@@ -147,6 +159,64 @@ public class OrdersController {
             return Result.success(orderItems);
         } catch (Exception e) {
             return Result.error("获取订单项失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 支付订单（模拟支付）
+     */
+    @PostMapping("/{orderId}/pay")
+    public Result<String> payOrder(@PathVariable Long orderId, HttpServletRequest request) {
+        // 从token获取用户ID
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return Result.error("未授权的请求");
+        }
+        
+        token = token.substring(7);
+        try {
+            Long userId = jwtUtil.getUserIdFromToken(token);
+            String account = jwtUtil.getAccountFromToken(token);
+            
+            // 获取订单信息，验证订单归属和状态
+            Orders order = ordersService.getById(orderId);
+            if (order == null) {
+                return Result.error("订单不存在");
+            }
+            
+            if (!order.getUserId().equals(userId)) {
+                return Result.error( "无权操作此订单");
+            }
+            
+            if (order.getStatus() != OrderStatus.PENDING) {
+                return Result.error("订单状态不正确，无法支付");
+            }
+            
+            // 更新订单状态为已支付
+            ordersService.updateOrderStatus(orderId, OrderStatus.PAID);
+            
+            // 获取订单项
+            List<OrderItem> orderItems = ordersService.getOrderItemsByOrderId(orderId);
+            
+            // 记录购买日志
+            for (OrderItem item : orderItems) {
+                Product product = productService.getById(item.getProductId());
+                if (product != null) {
+                    purchaseLogService.recordPurchaseLog(
+                        userId,
+                        orderId,
+                        item.getProductId(),
+                        product.getCategory(),
+                        item.getQuantity(),
+                        item.getProductPrice(),
+                        request
+                    );
+                }
+            }
+            
+            return Result.success("订单支付成功");
+        } catch (Exception e) {
+            return Result.error("支付失败: " + e.getMessage());
         }
     }
 }

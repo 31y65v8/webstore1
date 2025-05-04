@@ -55,6 +55,24 @@ const router = createRouter({
         requiresAuth: true,
         roles: ['CUSTOMER']
       }
+    },
+    {
+      path: '/seller/paid-orderitem',
+      name: 'PaidOrderItem',
+      component: () => import('@/views/PaidOrderItem.vue'),
+      meta: { requiresAuth: true, roles: ['SELLER'] }
+    },
+    {
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAuth: true, roles: ['ADMIN'] }
+    },
+    {
+      path: '/admin/sellers',
+      name: 'SellerManagement',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAuth: true, roles: ['ADMIN'] }
     }
   ]
 })

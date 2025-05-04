@@ -6,6 +6,9 @@ import com.wxl.webstore.user.dto.UserLoginDTO;
 import com.wxl.webstore.user.dto.UserRegisterDTO;
 import com.wxl.webstore.common.utils.JwtUtil;
 import com.wxl.webstore.common.enums.*;
+import com.wxl.webstore.log.loginlog.service.LoginLogService;
+import com.wxl.webstore.log.operationlog.annotation.OperationLogAnnoce;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,9 @@ public class UserController {
 
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private LoginLogService loginLogService;
 
     @PostMapping("/register")
     public Result<User> register(@RequestBody @Valid UserRegisterDTO dto) {
@@ -44,20 +50,49 @@ public class UserController {
 
     @PostMapping("/login")
     public Result<String> login(@RequestBody @Valid UserLoginDTO dto, HttpServletRequest request) {
-        User user = userService.login(dto);
-        // 生成JWT token返回给前端，使用登录时选择的角色
-        String token = jwtUtil.generateToken(dto.getAccount(), user.getId(), dto.getRole());
-        return Result.success(token);
+        try {
+            User user = userService.login(dto);
+            // 生成JWT token返回给前端，使用登录时选择的角色
+            String token = jwtUtil.generateToken(dto.getAccount(), user.getId(), dto.getRole());
+            
+            // 记录登录日志
+            loginLogService.recordLoginLog(user.getId(), dto.getAccount(), dto.getRole(), request, true, "登录成功");
+            
+            return Result.success(token);
+        } catch (Exception e) {
+            // 记录登录失败日志 - 用户ID为空，因为登录失败无法获取用户ID
+            loginLogService.recordLoginLog(null, dto.getAccount(), dto.getRole(), request, false, "登录失败：" + e.getMessage());
+            throw e; // 继续抛出异常，让全局异常处理
+        }
     }
 
     @PostMapping("/logout")
     public Result<String> logout(HttpServletRequest request) {
-        // 由于JWT是无状态的，前端需要自行删除token
-        return Result.success("退出登录成功");
+        // 从请求头获取token
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            try {
+                // 解析token获取用户信息
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                String account = jwtUtil.getAccountFromToken(token);
+                UserRole role = jwtUtil.getUserRoleFromToken(token);
+                
+                // 记录退出日志
+                loginLogService.recordLogoutLog(userId, account, role, request);
+                
+                // 由于JWT是无状态的，前端需要自行删除token
+                return Result.success("退出登录成功");
+            } catch (Exception e) {
+                return Result.error(401, "无效的token: " + e.getMessage());
+            }
+        }
+        return Result.error(401, "未授权的请求");
     }
 
     //注销账户，前端调用后应该自动接上退出登录操作！！！！！
     @DeleteMapping("/delete")
+    @OperationLogAnnoce(module = "用户模块", operation = "注销账户")
     public Result<String> deleteAccount(HttpServletRequest request) {
         // 从请求头获取token
         String token = request.getHeader("Authorization");

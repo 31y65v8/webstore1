@@ -16,12 +16,12 @@ public class CodeGenerator {
                             .outputDir("webstore\\src\\main\\java");  // 输出目录
                 })
                 .packageConfig(builder -> {
-                    builder.parent("com.wxl.webstore.browse")  // 父包名
+                    builder.parent("com.wxl.webstore.user_profile")  // 父包名
                             .moduleName("")     // 模块名
                             .pathInfo(Collections.singletonMap(OutputFile.xml, "webstore\\src\\main\\resources\\mapper")); // XML位置
                 })
                 .strategyConfig(builder -> {
-                    builder.addInclude("browse") // 要生成的表名
+                    builder.addInclude("user_profile") // 要生成的表名
                             .addTablePrefix("") // 不忽略表前缀
                             .entityBuilder()//.enableFileOverride()
                             .enableLombok()

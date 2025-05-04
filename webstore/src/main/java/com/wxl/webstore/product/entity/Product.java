@@ -55,4 +55,7 @@ private static final long serialVersionUID = 1L;
     @TableField("is_deleted")
     @TableLogic
     private Boolean isDeleted;
+    @Schema(description = "商品销量")
+    @TableField("sales")
+    private Integer sales;
 }

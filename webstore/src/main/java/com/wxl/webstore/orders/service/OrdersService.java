@@ -29,4 +29,7 @@ public interface OrdersService extends IService<Orders> {
     List<OrderItem> getOrderItemsByOrderId(Long orderId);//根据订单id获取所有订单项
     List<Orders> findExpiredPendingOrders(int minutes);
     void cancelOrder(Long orderId);
+    Long getReceiverId(Long orderId);//根据订单id获取收货地址id
+
+    
 }

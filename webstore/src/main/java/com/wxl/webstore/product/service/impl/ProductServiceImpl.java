@@ -380,4 +380,21 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         dtoPage.setRecords(dtoList);
         return dtoPage;
     }
+
+    @Override
+    @Transactional
+    public void increaseSales(Long productId, int quantity) {
+        
+        // 验证商品是否存在且属于当前卖家
+        Product product = this.getProductById(productId);   
+        if (product == null) {
+            throw new RuntimeException("商品不存在");
+        }
+        
+        // 增加销量
+        int newSales = product.getSales() + quantity;
+        product.setSales(newSales);
+        this.updateById(product);
+    }
+    
 }

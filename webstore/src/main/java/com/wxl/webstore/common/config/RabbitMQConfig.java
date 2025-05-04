@@ -7,11 +7,13 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
 public class RabbitMQConfig {
+
 
     public static final String ORDER_DELAY_EXCHANGE = "order.delay.exchange";
     public static final String ORDER_DELAY_QUEUE = "order.delay.queue";
@@ -37,10 +39,13 @@ public class RabbitMQConfig {
                 .noargs();
     }
 
+   
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(new Jackson2JsonMessageConverter());
+        
         return rabbitTemplate;
     }
+
 }

@@ -3,6 +3,9 @@ package com.wxl.webstore.user.service;
 import com.wxl.webstore.user.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wxl.webstore.user.dto.*;
+
+import java.util.List;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.wxl.webstore.common.enums.UserRole;
@@ -54,4 +57,21 @@ public interface UserService extends IService<User> {
      * @return 用户信息
      */
     User getUserInfo(Long userId);
+
+    //获取用户联系方式
+    String getUserContactInfo(Long userId);
+
+    //获取所有卖家
+    List<User> getAllSellers();
+
+    
+
+    //添加卖家
+    void addSeller(User newSeller);
+
+    //更新卖家口令
+    void updateSellerPassword(Long id, String newPassword);
+
+    //删除卖家
+    void removeSeller(Long id);
 }

@@ -1,8 +1,11 @@
 package com.wxl.webstore.browse.controller;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wxl.webstore.browse.entity.Browse;
@@ -29,11 +32,10 @@ public class BrowseController {
 
     @Autowired
     private JwtUtil jwtUtil;
-
     @PostMapping("/record")
-    public Result<Void> recordBrowse(@RequestBody Long productId, HttpServletRequest request) {
+    public Result<Void> recordBrowse(@RequestParam Long productId, HttpServletRequest request,@RequestParam Integer duration,@RequestParam String clickTime) {
         Long userId = getUserIdFromToken(request);
-        browseService.recordBrowse(productId, userId);
+        browseService.recordBrowse(productId, userId,duration,clickTime);
         return Result.success(null);
     }
 

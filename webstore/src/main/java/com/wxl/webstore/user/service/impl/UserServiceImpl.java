@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>
@@ -121,5 +122,51 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public User getUserInfo(Long userId) {
         return getById(userId);
+    }
+
+    @Override
+    public String getUserContactInfo(Long userId) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 优先返回邮箱，如果邮箱为空则返回手机号
+        if (user.getRegisterEmail() != null && !user.getRegisterEmail().trim().isEmpty()) {
+            return user.getRegisterEmail();
+        } else if (user.getRegisterPhone() != null && !user.getRegisterPhone().trim().isEmpty()) {
+            return user.getRegisterPhone();
+        } else {
+            return "未提供联系方式";
+        }
+    }
+
+    @Override
+    public List<User> getAllSellers() {
+        return list(new LambdaQueryWrapper<User>().eq(User::getRole, UserRole.SELLER));
+    }
+
+    
+    @Override
+    public void addSeller(User newSeller) {
+        newSeller.setRole(UserRole.SELLER);
+        //newSeller.setIsDeleted(false);
+        //newSeller.setRegisterTime(LocalDateTime.now());
+        save(newSeller);
+    }
+
+    @Override
+    public void removeSeller(Long id) {
+        User seller = getById(id);
+        seller.setIsDeleted(true);
+        seller.setDeletedAt(LocalDateTime.now());
+        updateById(seller);
+    }
+
+    @Override
+    public void updateSellerPassword(Long id, String newPassword) {
+        User seller = getById(id);
+        seller.setPassword(passwordEncoder.encode(newPassword));
+        updateById(seller);
     }
 }

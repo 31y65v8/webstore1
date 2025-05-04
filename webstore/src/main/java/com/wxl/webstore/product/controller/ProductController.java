@@ -2,6 +2,7 @@ package com.wxl.webstore.product.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wxl.webstore.common.enums.ProductCategory;
+import com.wxl.webstore.log.operationlog.annotation.OperationLogAnnoce;
 import com.wxl.webstore.product.dto.ProductUpdateDTO;
 import com.wxl.webstore.product.entity.Product;
 import com.wxl.webstore.product.dto.ProductDTO;
@@ -56,15 +57,16 @@ public class ProductController {
 
     // 获取商品名称模糊搜索的分页结果
     @GetMapping("/products/search")
+    @OperationLogAnnoce(module = "商品模块", operation = "搜索商品")
     public Page<ProductDTO> searchProductsByName(@RequestParam(defaultValue = "1") int pageNum,
                                               @RequestParam(defaultValue = "10") int pageSize,
-                                              @RequestParam String name) {
-        return productService.getProductsByNameDTOs(pageNum, pageSize, name);
+                                              @RequestParam String q) {
+        return productService.getProductsByNameDTOs(pageNum, pageSize, q);
     }
 
     // 卖家上传商品图片
     @PostMapping("/upload/image")
-    //@PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public Result<String> uploadProductImage(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return Result.error("请选择要上传的图片");
@@ -106,6 +108,7 @@ public class ProductController {
     // 卖家添加新商品
     @PostMapping("/add")
     @PreAuthorize("hasRole('SELLER')")
+    @OperationLogAnnoce(module = "商品模块", operation = "添加商品")
     public Result<ProductDTO> addProduct(@RequestBody Product product) {
         try {
             Product savedProduct = productService.addProduct(product);
@@ -132,6 +135,7 @@ public class ProductController {
     // 更新商品信息
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
+    @OperationLogAnnoce(module = "商品模块", operation = "更新商品信息")
     public Result<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO updateDTO) {
         try {
             Product updatedProduct = productService.updateProductPartial(id, updateDTO);
@@ -144,6 +148,7 @@ public class ProductController {
     // 删除商品（软删除）
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
+    @OperationLogAnnoce(module = "商品模块", operation = "删除商品")
     public Result<Void> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);

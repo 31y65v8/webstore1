@@ -33,6 +33,7 @@ public interface ProductService extends IService<Product> {
     BigDecimal getProductPriceById(Long id);
     void decreaseStock(Long productId, int quantity);//减少商品库存
     void increaseStock(Long productId, int quantity);//增加商品库存
+    void increaseSales(Long productId, int quantity);//增加商品销量
     Page<ProductDTO> getPageOfProductDTOs(int pageNum, int pageSize);
     Page<ProductDTO> getPageByCategoryDTOs(int pageNum, int pageSize, ProductCategory category);
     Page<ProductDTO> getProductsByNameDTOs(int pageNum, int pageSize, String name);

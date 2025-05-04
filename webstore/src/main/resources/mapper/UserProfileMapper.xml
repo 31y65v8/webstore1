@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wxl.webstore.user_profile.mapper.UserProfileMapper">
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM user_profile WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insertOrUpdate" parameterType="com.wxl.webstore.user_profile.entity.UserProfile">
+        INSERT INTO user_profile (
+            user_id,
+            last_purchase_time,
+            last30days_purchase_frequency,
+            total_purchase_amount,
+            average_order_amount,
+            last30days_login_frequency,
+            last_login_time,
+            last30days_browse_frequency,
+            primary_category,
+            secondary_category,
+            province_code,
+            city_code,
+            tags,
+            create_time,
+            update_time
+        ) VALUES (
+            #{userProfile.userId},
+            #{userProfile.lastPurchaseTime},
+            #{userProfile.last30daysPurchaseFrequency},
+            #{userProfile.totalPurchaseAmount},
+            #{userProfile.averageOrderAmount},
+            #{userProfile.last30daysLoginFrequency},
+            #{userProfile.lastLoginTime},
+            #{userProfile.last30daysBrowseFrequency},
+            #{userProfile.primaryCategory},
+            #{userProfile.secondaryCategory},
+            #{userProfile.provinceCode},
+            #{userProfile.cityCode},
+            #{userProfile.tags},
+            #{userProfile.createTime},
+            #{userProfile.updateTime}
+        ) ON DUPLICATE KEY UPDATE
+            last_purchase_time = VALUES(last_purchase_time),
+            last30days_purchase_frequency = VALUES(last30days_purchase_frequency),
+            total_purchase_amount = VALUES(total_purchase_amount),
+            average_order_amount = VALUES(average_order_amount),
+            last30days_login_frequency = VALUES(last30days_login_frequency),
+            last_login_time = VALUES(last_login_time),
+            last30days_browse_frequency = VALUES(last30days_browse_frequency),
+            primary_category = VALUES(primary_category),
+            secondary_category = VALUES(secondary_category),
+            province_code = VALUES(province_code),
+            city_code = VALUES(city_code),
+            tags = VALUES(tags),
+            update_time = VALUES(update_time)
+    </insert>
+
+</mapper>

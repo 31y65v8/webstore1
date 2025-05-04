@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.wxl.webstore.common.enums.OrderItemStatus;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -32,4 +33,6 @@ private static final long serialVersionUID = 1L;
     private Integer quantity;
     @TableField("total_price")
     private BigDecimal totalPrice;
+    @TableField("status")
+    private OrderItemStatus status;
 }

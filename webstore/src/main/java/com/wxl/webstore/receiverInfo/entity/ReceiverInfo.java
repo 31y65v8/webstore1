@@ -30,21 +30,25 @@ private static final long serialVersionUID = 1L;
         @Schema(description = "收货电话")
     @TableField("receiver_phone")
     private String receiverPhone;
-        @Schema(description = "省份编码")
+    
+    @Schema(description = "省份编码")
     @TableField("province_code")
     private String provinceCode;
+       
         @Schema(description = "省份名称")
     @TableField("province_name")
     private String provinceName;
-        @Schema(description = "城市编码")
+    @Schema(description = "城市编码")
     @TableField("city_code")
-    private String cityCode;
+    private String cityCode; 
+    
         @Schema(description = "城市名称")
     @TableField("city_name")
     private String cityName;
-        @Schema(description = "区县编码")
+    @Schema(description = "区县编码")
     @TableField("district_code")
     private String districtCode;
+     
         @Schema(description = "区县名称")
     @TableField("district_name")
     private String districtName;

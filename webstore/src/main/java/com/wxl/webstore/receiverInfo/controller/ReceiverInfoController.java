@@ -57,7 +57,7 @@ public class ReceiverInfoController {
             String label = request.get("label") == null ? "" : request.get("label").toString();
 
             boolean result = receiverInfoService.createReceiverInfo(userId, receiverName, receiverPhone,
-                    provinceCode, provinceName, cityCode, cityName, districtCode, districtName, detail, label);
+                     provinceCode,provinceName,cityCode,cityName, districtCode, districtName, detail, label);
             
             return result ? Result.success("收货地址创建成功") : Result.error("收货地址创建失败");
         } catch (Exception e) {

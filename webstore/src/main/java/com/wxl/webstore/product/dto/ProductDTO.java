@@ -13,7 +13,7 @@ public class ProductDTO {
     private String productDescription;
     private String productCategory;
     private Integer productStorage;
-    
+    private Integer productSales;
     
     public ProductDTO(Product product) {
         this.productId = String.valueOf(product.getId());
@@ -23,5 +23,6 @@ public class ProductDTO {
         this.productDescription = product.getDescription();
         this.productCategory = product.getCategory().toString();
         this.productStorage = product.getStorage();
+        this.productSales = product.getSales();
     }
 }

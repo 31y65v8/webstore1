@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.cart.entity.Cart;
 import com.wxl.webstore.cart.service.CartService;
+import com.wxl.webstore.common.enums.OrderItemStatus;
 import com.wxl.webstore.common.enums.OrderStatus;
 import com.wxl.webstore.common.service.RabbitMQSender;
 import com.wxl.webstore.orders.entity.OrderItem;
@@ -117,7 +118,10 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         try {
             // 减少库存（包含分布式锁逻辑）
             productService.decreaseStock(cart.getProductId(), cart.getQuantity());
+            // 增加销量
+            productService.increaseSales(cart.getProductId(), cart.getQuantity());
             
+
             // 创建订单项
             OrderItem orderItem = new OrderItem();
             orderItem.setOrderId(order.getId());
@@ -126,7 +130,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             orderItem.setProductPrice(getProductPrice(cart.getProductId()));
             orderItem.setQuantity(cart.getQuantity());
             orderItem.setTotalPrice(orderItem.getProductPrice().multiply(BigDecimal.valueOf(cart.getQuantity())));
-            
+            orderItem.setStatus(OrderItemStatus.PENDING);
             orderItems.add(orderItem);
         } catch (Exception e) {
             // 如果某个商品处理失败，回滚事务
@@ -200,6 +204,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     }
 
     @Override
+    @Transactional
     public void updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Orders order = this.getById(orderId);
         if (order == null) {
@@ -210,10 +215,18 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         order.setUpdateTime(LocalDateTime.now());
         this.updateById(order);
         
-        // 在订单状态为已发货时，通知用户
-        if (newStatus == OrderStatus.SHIPPED) {
-            notifyUser(order);
+        if(newStatus == OrderStatus.PAID){
+            //获取订单项
+            List<OrderItem> orderItems = orderItemService.getOrderItemsByOrderId(orderId);
+            //更新订单项状态
+            for(OrderItem orderItem : orderItems){
+                orderItem.setStatus(OrderItemStatus.PAID);
+                orderItemService.updateOrderItemStatus(orderItem.getId(), OrderItemStatus.PAID);
+            }
         }
+
+
+        
     }
 
     @Override
@@ -245,11 +258,13 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         return this.list(queryWrapper);
     }
     
-    // 通知用户订单已发货
-    private void notifyUser(Orders order) {
-        // 根据用户注册方式选择通知方式（短信或邮件）
-        // 此处需要调用用户服务获取用户信息
-        // 实现短信或邮件发送逻辑
+    @Override
+    public Long getReceiverId(Long orderId) {
+        Orders order = this.getById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+        return order.getReceiverId();
     }
 
 }

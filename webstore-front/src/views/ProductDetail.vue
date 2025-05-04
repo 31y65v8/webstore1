@@ -143,33 +143,47 @@ const startTimer = () => {
   
   // 如果是CUSTOMER角色，记录浏览开始
   if (isLoggedIn.value && userRole.value === 'CUSTOMER') {
-    // 这里可以选择在进入时就记录浏览，或者仅在离开时记录完整的停留时间
-    recordBrowse(0) // 传入0表示刚进入，还没有停留时间
+    // 记录页面进入时间
+  entryTime.value = Date.now()
+  console.log(`用户在 ${new Date(entryTime.value).toLocaleTimeString()} 点击了商品`)
+    
+    //recordBrowse(0) // 传入0表示刚进入，还没有停留时间
   }
 }
 
 // 记录浏览信息
 const recordBrowse = async (duration) => {
   try {
-    // 确保只记录一次完整的浏览（防止多次调用）
-    if (duration > 0 && isRecorded.value) return
+    if (isRecorded.value) return
+    
+    if (!product.value || !product.value.productId) {
+      console.error('无法记录浏览历史：产品ID不存在')
+      return
+    }
     
     const token = localStorage.getItem('token')
     if (!token) return
     
-    await axios.post('/api/browse/record', {
-      productId: product.value.productId,
-      stayDuration: duration
-    }, {
+    // 创建日期对象
+    const date = new Date(entryTime.value);
+    
+    // 格式化为Java LocalDateTime能解析的格式 (yyyy-MM-ddTHH:mm:ss)
+    // 移除末尾的Z和毫秒部分
+    const clickTimeFormatted = date.toISOString().substring(0, 19);
+    
+    await axios.post('/api/browse/record', null, {
+      params: {
+        productId: product.value.productId,
+        duration: duration,
+        clickTime: clickTimeFormatted
+      },
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
     
-    if (duration > 0) {
-      isRecorded.value = true
-      console.log(`浏览记录已保存，停留时间: ${duration}秒`)
-    }
+    isRecorded.value = true
+    console.log(`浏览记录已保存，停留时间: ${duration}秒`)
   } catch (error) {
     console.error('记录浏览历史失败:', error)
   }
@@ -182,7 +196,7 @@ const recordStayDuration = () => {
   const exitTime = Date.now()
   const duration = Math.floor((exitTime - entryTime.value) / 1000) // 转换为秒
   
-  // 只有停留时间超过一定阈值（如3秒）才记录，避免记录过短的浏览
+  // 只有停留时间超过一定阈值（1秒）才记录，避免记录过短的浏览
   if (duration >= 1) {
     recordBrowse(duration)
   }

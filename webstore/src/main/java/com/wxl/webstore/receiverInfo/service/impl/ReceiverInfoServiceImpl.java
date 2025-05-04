@@ -28,8 +28,9 @@ public class ReceiverInfoServiceImpl extends ServiceImpl<ReceiverInfoMapper, Rec
 
     // 新建收货信息
     public boolean createReceiverInfo(Long userId, String receiverName, String receiverPhone,
-                                      String provinceCode, String provinceName, String cityCode,
-                                      String cityName, String districtCode, String districtName,
+                                       String provinceCode,String provinceName,
+                                      String cityCode,String cityName,
+                                      String districtCode,String districtName,
                                       String detail, String label) {
         ReceiverInfo receiverInfo = new ReceiverInfo();
         receiverInfo.setUserId(userId);
@@ -150,30 +151,30 @@ public class ReceiverInfoServiceImpl extends ServiceImpl<ReceiverInfoMapper, Rec
             needUpdate = true;
         }
         
-        if (updateInfo.getProvinceCode() != null) {
+        /*if (updateInfo.getProvinceCode() != null) {
             existingInfo.setProvinceCode(updateInfo.getProvinceCode());
             needUpdate = true;
-        }
+        }*/
         
         if (updateInfo.getProvinceName() != null) {
             existingInfo.setProvinceName(updateInfo.getProvinceName());
             needUpdate = true;
         }
         
-        if (updateInfo.getCityCode() != null) {
+        /*if (updateInfo.getCityCode() != null) {
             existingInfo.setCityCode(updateInfo.getCityCode());
             needUpdate = true;
-        }
+        }*/
         
         if (updateInfo.getCityName() != null) {
             existingInfo.setCityName(updateInfo.getCityName());
             needUpdate = true;
         }
         
-        if (updateInfo.getDistrictCode() != null) {
+        /*if (updateInfo.getDistrictCode() != null) {
             existingInfo.setDistrictCode(updateInfo.getDistrictCode());
             needUpdate = true;
-        }
+        }*/ 
         
         if (updateInfo.getDistrictName() != null) {
             existingInfo.setDistrictName(updateInfo.getDistrictName());

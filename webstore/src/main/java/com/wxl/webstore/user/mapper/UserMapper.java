@@ -22,7 +22,7 @@ public interface UserMapper extends BaseMapper<User> {
     //User selectByRole(UserRole role);
     User selectSELLERByIsDeleted(Integer isDeleted);
     User selectCUSTOMERByIsDeleted(Integer isDeleted);
-
+    User selectByUserId(Long userId);
 
 
 }

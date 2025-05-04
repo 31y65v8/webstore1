@@ -16,8 +16,9 @@ import java.util.List;
 public interface ReceiverInfoService extends IService<ReceiverInfo> {
     //创建收货信息
     boolean createReceiverInfo(Long userId, String receiverName, String receiverPhone,
-                               String provinceCode, String provinceName, String cityCode,
-                               String cityName, String districtCode, String districtName,
+                                String provinceCode, String provinceName,
+                               String cityCode, String cityName,
+                               String districtCode, String districtName,
                                String detail, String label);
 
     //删除收货信息

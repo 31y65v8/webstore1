@@ -57,7 +57,7 @@ const fetchProducts = async () => {
     
     if (props.searchQuery) {
       url = '/api/product/products/search'
-      params.name = props.searchQuery
+      params.q = props.searchQuery
     } else if (props.category !== 'ALL') {
       url = '/api/product/products/category'
       params.category = props.category

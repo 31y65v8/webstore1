@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@MapperScan("com.wxl.webstore.*.mapper")
+@MapperScan({"com.wxl.webstore.*.mapper", "com.wxl.webstore.*.*.mapper"})
 @EnableScheduling
 public class WebstoreApplication {
 
