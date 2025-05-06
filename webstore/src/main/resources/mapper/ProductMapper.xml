@@ -8,4 +8,14 @@
     <select id="selectByName" resultType="com.wxl.webstore.product.entity.Product">
         SELECT * FROM product WHERE name = #{name}
     </select>
+    <select id="selectProductIdsByCategoryAndPriceRange" resultType="java.lang.Long">
+        SELECT id
+        FROM product
+        WHERE category = #{category}
+          AND price &gt;= #{minPrice}
+          AND price &lt;= #{maxPrice}
+          AND is_deleted = 0
+        ORDER BY update_time DESC
+        LIMIT 20
+    </select>
 </mapper>

@@ -1,7 +1,7 @@
-package com.wxl.webstore.browse.mapper;
+package com.wxl.webstore.log.browse.mapper;
 
-import com.wxl.webstore.browse.entity.Browse;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.wxl.webstore.log.browse.entity.Browse;
 
 import java.util.List;
 

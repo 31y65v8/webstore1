@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import com.wxl.webstore.common.Result;
 import io.jsonwebtoken.Claims;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import com.wxl.webstore.user.dto.UserDTO;
 
@@ -137,5 +138,12 @@ public class UserController {
             }
         }
         return Result.error(401, "未授权的请求");
+    }
+
+    @GetMapping("/allsellers")
+    public Result<List<UserDTO>> getAllSellers(){
+        List<User> sellers= userService.getAllSellers();
+        List<UserDTO> sellerDTOs = UserDTO.fromEntity(sellers);
+       return Result.success(sellerDTOs);
     }
 }

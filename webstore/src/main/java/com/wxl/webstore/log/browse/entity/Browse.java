@@ -1,4 +1,4 @@
-package com.wxl.webstore.browse.entity;
+package com.wxl.webstore.log.browse.entity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

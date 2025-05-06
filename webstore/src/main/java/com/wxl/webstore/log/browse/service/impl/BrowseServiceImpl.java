@@ -1,9 +1,9 @@
-package com.wxl.webstore.browse.service.impl;
+package com.wxl.webstore.log.browse.service.impl;
 
-import com.wxl.webstore.browse.entity.Browse;
-import com.wxl.webstore.browse.mapper.BrowseMapper;
-import com.wxl.webstore.browse.service.BrowseService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.wxl.webstore.log.browse.entity.Browse;
+import com.wxl.webstore.log.browse.mapper.BrowseMapper;
+import com.wxl.webstore.log.browse.service.BrowseService;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -2,6 +2,29 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wxl.webstore.user_profile.mapper.UserProfileMapper">
 
+    <resultMap id="BaseResultMap" type="com.wxl.webstore.user_profile.entity.UserProfile">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="province_code" property="provinceCode"/>
+        <result column="city_code" property="cityCode"/>
+        <result column="last_purchase_time" property="lastPurchaseTime"/>
+        <result column="total_purchase_amount" property="totalPurchaseAmount"/>
+        <result column="average_order_amount" property="averageOrderAmount"/>
+        <result column="last30days_purchase_frequency" property="last30daysPurchaseFrequency"/>
+        <result column="recency_score" property="recencyScore"/>
+        <result column="frequency_score" property="frequencyScore"/>
+        <result column="monetary_score" property="monetaryScore"/>
+        <result column="rmf_level" property="rmfLevel"/>
+        <result column="primary_category" property="primaryCategory"/>
+        <result column="secondary_category" property="secondaryCategory"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+        <result column="last30days_login_frequency" property="last30daysLoginFrequency"/>
+        <result column="last30days_browse_frequency" property="last30daysBrowseFrequency"/>
+        <result column="tags" property="tags"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
     <select id="selectByUserId" resultMap="BaseResultMap">
         SELECT * FROM user_profile WHERE user_id = #{userId}
     </select>

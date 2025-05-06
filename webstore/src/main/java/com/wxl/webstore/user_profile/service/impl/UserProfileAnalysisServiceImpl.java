@@ -8,15 +8,19 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.log.purchaselog.entity.PurchaseLog;
 import com.wxl.webstore.log.purchaselog.service.PurchaseLogService;
+import com.wxl.webstore.product.service.ProductService;
+import com.wxl.webstore.log.browse.entity.Browse;
+import com.wxl.webstore.log.browse.service.BrowseService;
 import com.wxl.webstore.log.loginlog.entity.LoginLog;
 import com.wxl.webstore.log.loginlog.service.LoginLogService;
-import com.wxl.webstore.browse.entity.Browse;
-import com.wxl.webstore.browse.service.BrowseService;
 import com.wxl.webstore.common.enums.ProductCategory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import java.util.concurrent.TimeUnit;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
@@ -43,6 +47,12 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
     
     @Autowired
     private BrowseService browseService;
+
+    @Autowired
+    private ProductService productService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -72,6 +82,9 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         } catch (Exception e) {
             log.error("分析用户画像失败，userId: {}", userId, e);
             throw e;
+        } finally {
+            redisTemplate.delete("userProfile:analysis:" + userId);
+            redisTemplate.delete("userProfile:recommend:" + userId);
         }
     }
     
@@ -84,6 +97,13 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         if (purchaseLogs.isEmpty()) {
             profile.setTotalPurchaseAmount(BigDecimal.ZERO);
             profile.setLast30daysPurchaseFrequency((long) 0);
+            profile.setLastPurchaseTime(null);
+            profile.setRecencyScore(1);
+            profile.setFrequencyScore(1);
+            profile.setMonetaryScore(1);
+            profile.setRmfLevel("1-1-1");
+            profile.setPrimaryCategory(null);
+            profile.setTags("无活跃记录");
             return;
         }
         
@@ -96,6 +116,16 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         BigDecimal avgOrderAmount = totalAmount.divide(
             new BigDecimal(purchaseLogs.size()), 2, RoundingMode.HALF_UP);
             
+        long frequency = purchaseLogs.size();
+
+        LocalDateTime lastPurchaseTime = purchaseLogs.stream()
+            .map(PurchaseLog::getPurchaseTime)
+            .max(LocalDateTime::compareTo)
+            .orElse(null);
+
+        long recencyDays = java.time.Duration.between(lastPurchaseTime, LocalDateTime.now()).toDays();
+
+
         // 统计品类偏好
         Map<ProductCategory, Long> categoryCount = purchaseLogs.stream()
             .collect(Collectors.groupingBy(
@@ -107,16 +137,31 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         Optional<Map.Entry<ProductCategory, Long>> primaryCategory = categoryCount.entrySet()
             .stream()
             .max(Map.Entry.comparingByValue());
+
+        // RFM 三分法（基于30天数据）
+        int recencyScore = recencyDays <= 3 ? 5 :
+        recencyDays <= 7 ? 4 :
+        recencyDays <= 14 ? 3 :
+        recencyDays <= 21 ? 2 : 1;
+
+        int frequencyScore = frequency >= 15 ? 5 :
+        frequency >= 8 ? 4 :
+        frequency >= 4 ? 3 :
+        frequency >= 2 ? 2 : 1;
+
+        int monetaryScore = totalAmount.compareTo(new BigDecimal(3000)) > 0 ? 5 :
+        totalAmount.compareTo(new BigDecimal(1500)) > 0 ? 4 :
+        totalAmount.compareTo(new BigDecimal(700)) > 0 ? 3 :
+        totalAmount.compareTo(new BigDecimal(300)) > 0 ? 2 : 1;
             
         profile.setTotalPurchaseAmount(totalAmount);
         profile.setAverageOrderAmount(avgOrderAmount);
-        profile.setLast30daysPurchaseFrequency((long) purchaseLogs.size());
-        profile.setLastPurchaseTime(
-            purchaseLogs.stream()
-                .map(PurchaseLog::getPurchaseTime)
-                .max(LocalDateTime::compareTo)
-                .orElse(null)
-        );
+        profile.setLast30daysPurchaseFrequency(frequency);
+        profile.setLastPurchaseTime(lastPurchaseTime);
+        profile.setRecencyScore(recencyScore);
+        profile.setFrequencyScore(frequencyScore);
+        profile.setMonetaryScore(monetaryScore);
+        profile.setRmfLevel(recencyScore + "-" + frequencyScore + "-" + monetaryScore);
         primaryCategory.ifPresent(entry -> profile.setPrimaryCategory(entry.getKey().name()));
     }
     
@@ -184,12 +229,21 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
 
     @Override
     public UserProfileAnalysisDTO getUserProfileAnalysis(Long userId) {
+        String cacheKey = "userProfile:analysis:" + userId;
+        ValueOperations<String, Object> ops = redisTemplate.opsForValue();
+
+        // 1. 先查缓存
+        UserProfileAnalysisDTO dto = (UserProfileAnalysisDTO) ops.get(cacheKey);
+        if (dto != null) {
+            return dto;
+        }
+
+        // 2. 缓存没有，查数据库
         UserProfile profile = getBaseMapper().selectByUserId(userId);
         if (profile == null) {
             return null;
         }
-        
-        UserProfileAnalysisDTO dto = new UserProfileAnalysisDTO();
+        dto = new UserProfileAnalysisDTO();
         dto.setUserId(userId);
         dto.getConsumptionAnalysis().setTotalPurchaseAmount(profile.getTotalPurchaseAmount());
         dto.getConsumptionAnalysis().setAverageOrderAmount(profile.getAverageOrderAmount());
@@ -203,6 +257,9 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         dto.setTags(Arrays.asList(profile.getTags().split(",")));
         dto.getCategoryPreference().setMostPurchasedCategory(profile.getPrimaryCategory());
         
+        // 3. 写入缓存，设置过期时间（如1小时）
+        ops.set(cacheKey, dto, 1, TimeUnit.HOURS);
+
         return dto;
     }
     
@@ -224,20 +281,35 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
     
     @Override
     public List<Long> getRecommendedProducts(Long userId) {
+        String cacheKey = "userProfile:recommend:" + userId;
+        ValueOperations<String, Object> ops = redisTemplate.opsForValue();
+
+        List<Long> productIds = (List<Long>) ops.get(cacheKey);
+        if (productIds != null) {
+            return productIds;
+        }
+
         UserProfile profile = getBaseMapper().selectByUserId(userId);
         if (profile == null) {
             return Collections.emptyList();
         }
-        
-        // 基于用户主要品类和消费能力推荐商品
-        ProductCategory primaryCategory = profile.getPrimaryCategory() != null ? 
+
+        ProductCategory primaryCategory = profile.getPrimaryCategory() != null ?
             ProductCategory.valueOf(profile.getPrimaryCategory()) : null;
-            
+
         if (primaryCategory == null) {
             return Collections.emptyList();
         }
-        
-        // TODO: 实现具体的推荐逻辑，可以基于用户画像特征进行个性化推荐
-        return Collections.emptyList();
+
+        // 设置推荐价格区间
+        BigDecimal avgAmount = profile.getAverageOrderAmount() != null ? profile.getAverageOrderAmount() : BigDecimal.ZERO;
+        BigDecimal minPrice = avgAmount.multiply(new BigDecimal("0.8"));
+        BigDecimal maxPrice = avgAmount.multiply(new BigDecimal("1.2"));
+
+        // 调用 ProductService 查询推荐商品
+        productIds = productService.getRecommendedProductsByCategoryAndPriceRange(primaryCategory, minPrice, maxPrice);
+
+        ops.set(cacheKey, productIds, 30, TimeUnit.MINUTES); // 缓存30分钟
+        return productIds;
     }
 }

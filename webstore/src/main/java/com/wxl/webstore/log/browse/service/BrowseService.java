@@ -1,11 +1,10 @@
-package com.wxl.webstore.browse.service;
-
-import com.wxl.webstore.browse.entity.Browse;
+package com.wxl.webstore.log.browse.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.wxl.webstore.log.browse.entity.Browse;
 
 /**
  * <p>

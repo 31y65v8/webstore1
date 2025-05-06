@@ -6,6 +6,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import java.math.BigDecimal;
+import java.util.List;
+
 
 /**
  * <p>
@@ -48,5 +51,17 @@ public interface ProductMapper extends BaseMapper<Product> {
     @Select("SELECT * FROM product WHERE name LIKE CONCAT('%', #{name}, '%')")
     Page<Product> selectPageByName(Page<Product> page, @Param("name") String name);
 
+    List<Long> selectProductIdsByCategoryAndPriceRange(@Param("category") String category,
+                                                       @Param("minPrice") BigDecimal minPrice,
+                                                       @Param("maxPrice") BigDecimal maxPrice);
+
+    @Select("SELECT DISTINCT seller_id FROM product WHERE is_deleted = 0")
+    List<Long> selectDistinctSellerIds();
+
+    @Select("SELECT DISTINCT category FROM product WHERE is_deleted = 0")
+    List<String> selectAllCategories();
+
+    @Select("SELECT id FROM product WHERE category = #{category} AND is_deleted = 0")
+    List<Long> selectIdsByCategory(@Param("category") String category);
 
 }

@@ -1,4 +1,4 @@
-package com.wxl.webstore.browse.controller;
+package com.wxl.webstore.log.browse.controller;
 
 import java.time.LocalDateTime;
 
@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.wxl.webstore.browse.entity.Browse;
-import com.wxl.webstore.browse.service.BrowseService;
-import com.wxl.webstore.common.Result;
+import com.wxl.webstore.common.response.Result;
 import com.wxl.webstore.common.utils.JwtUtil;
+import com.wxl.webstore.log.browse.entity.Browse;
+import com.wxl.webstore.log.browse.service.BrowseService;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.servlet.http.HttpServletRequest;

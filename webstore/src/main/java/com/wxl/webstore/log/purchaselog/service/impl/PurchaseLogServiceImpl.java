@@ -7,10 +7,13 @@ import com.wxl.webstore.common.enums.ProductCategory;
 import com.wxl.webstore.common.utils.IpUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>
@@ -23,6 +26,7 @@ import java.time.LocalDateTime;
 @Service
 public class PurchaseLogServiceImpl extends ServiceImpl<PurchaseLogMapper, PurchaseLog> implements PurchaseLogService {
 
+    
     @Override
     public void recordPurchaseLog(Long userId, Long orderId, Long productId, 
                                  ProductCategory productCategory, Integer quantity,
@@ -40,4 +44,9 @@ public class PurchaseLogServiceImpl extends ServiceImpl<PurchaseLogMapper, Purch
         
         save(purchaseLog);
     }
+
+   // @Override
+    //public List<PurchaseLog> getPurchaseLogsBySellerId(Long sellerId){
+      //  productService.getSellerProducts(1, 10);
+    //}
 }

@@ -3,16 +3,37 @@
     <h1>管理控制台</h1>
     
     <div class="admin-menu">
-      <div class="menu-card" @click="goToReports">
-        <i class="icon chart-icon"></i>
-        <h3>销售报表</h3>
-        <p>查看销售数据、产品类别统计和业绩趋势</p>
-      </div>
+      
       
       <div class="menu-card" @click="goToSellerManagement">
         <i class="icon user-icon"></i>
         <h3>销售人员管理</h3>
-        <p>管理销售人员账号、权限和密码</p>
+        <p>管理销售人员、修改销售人员口令</p>
+      </div>
+
+      <div class="menu-card" @click="goToSellerSalesReport">
+        <i class="icon chart-icon"></i>
+        <h3>销售人员销售报表</h3>
+        <p>查看销售人员负责的各类别商品的销量等统计</p>
+      </div>
+      <SellerList v-if="showSellerList" @view-report="fetchSalesReport" />
+
+
+      <div class="menu-card" @click="goToCategoriesSalesReport">
+        <i class="icon chart-icon"></i>
+        <h3>商品类别销售报表</h3>
+        <p>查看各类别商品的销量、库存等统计</p>
+      </div>
+
+      <div class="menu-card" @click="goToProductSalesTrend">
+        <i class="icon chart-icon"></i>
+        <h3>商品销售趋势与异常</h3>
+        <p>查看商品销售趋势预测与异常监控</p>
+      </div>
+      <div class="menu-card" @click="goToUserProfile">
+        <i class="icon chart-icon"></i>
+        <h3>用户画像</h3>
+        <p>查看用户画像</p>
       </div>
     </div>
 
@@ -119,7 +140,14 @@
       </div>
       <div class="modal-overlay" @click="showDeleteSellerModal = false"></div>
     </div>
+
+    <CategoriesSalesReport v-if="showCategoriesSalesReport" @close="showCategoriesSalesReport = false" />
+    <div v-if="showCategoriesSalesReport" class="modal-overlay" @click="showCategoriesSalesReport = false"></div>
+
+    <ProductSalesTrend v-if="showProductSalesTrend" @close="showProductSalesTrend = false" />
+    <div v-if="showProductSalesTrend" class="modal-overlay" @click="showProductSalesTrend = false"></div>
   </div>
+
 </template>
 
 <script>
@@ -127,7 +155,15 @@ import axios from 'axios';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
+import CategoriesSalesReport from '../components/admin/CategoriesSalesReport.vue'
+import ProductSalesTrend from '../components/admin/ProductSalesTrend.vue'
+
 export default {
+  components: {
+    
+    CategoriesSalesReport,
+    ProductSalesTrend
+  },
   setup() {
     const router = useRouter();
     const sellers = ref([]);
@@ -139,6 +175,13 @@ export default {
     const showDeleteSellerModal = ref(false);
     const selectedSeller = ref(null);
     const newPassword = ref('');
+    const showSalesReport = ref(false);
+    const selectedSellerId = ref(null);
+    const salesReport = ref([]);
+    const loadingSalesReport = ref(false);
+    const showCategoriesSalesReport = ref(false);
+    const showProductSalesTrend = ref(false);
+    const showSellerList = ref(false);
     
     const newSeller = ref({
       username: '',
@@ -166,6 +209,18 @@ export default {
       showSellerManagement.value = true;
       fetchSellers();
     };
+    const goToSellerSalesReport = () => {
+      router.push("/admin/report/sellers")
+    };
+
+    const goToCategoriesSalesReport = () => {
+      router.push("/admin/report/categories")
+    };
+
+    const goToProductSalesTrend = () => {
+      router.push("/admin/report/products")
+    };
+
 
     const fetchSellers = async () => {
       loading.value = true;
@@ -270,6 +325,29 @@ export default {
       return date.toLocaleString();
     };
 
+    const fetchSalesReport = async (sellerId) => {
+      showSalesReport.value = true;
+      selectedSellerId.value = sellerId;
+      loadingSalesReport.value = true;
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('/api/admin/seller-category-report', {
+          params: { sellerId },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.code === 200 || Array.isArray(res.data)) {
+          // 兼容直接返回数组或统一响应格式
+          salesReport.value = res.data.data || res.data;
+        } else {
+          alert('获取销售报表失败: ' + (res.data.msg || '未知错误'));
+        }
+      } catch (e) {
+        alert('获取销售报表失败: ' + (e.response?.data?.msg || e.message));
+      } finally {
+        loadingSalesReport.value = false;
+      }
+    };
+
     onMounted(() => {
       // 根据路由参数决定是否默认显示销售人员管理
       if (router.currentRoute.value.path === '/admin/sellers') {
@@ -292,12 +370,23 @@ export default {
       newSeller,
       goToReports,
       goToSellerManagement,
+      goToSellerSalesReport,
+      goToProductSalesTrend,
+      showSellerList,
       showPasswordModal,
       showDeleteModal,
       addSeller,
       resetPassword,
       deleteSeller,
-      formatDate
+      formatDate,
+      showSalesReport,
+      selectedSellerId,
+      salesReport,
+      loadingSalesReport,
+      fetchSalesReport,
+      showCategoriesSalesReport,
+      goToCategoriesSalesReport,
+      showProductSalesTrend
     };
   }
 };

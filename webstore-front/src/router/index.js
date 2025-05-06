@@ -6,6 +6,7 @@ import ProductDetail from '@/views/ProductDetail.vue'
 import CustomerView from '@/views/CustomerView.vue'
 import CartView from '@/views/CartView.vue'
 import MyOrdersView from '@/views/MyOrdersView.vue'
+import SellerList from '@/views/SellerList.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -72,6 +73,24 @@ const router = createRouter({
       path: '/admin/sellers',
       name: 'SellerManagement',
       component: () => import('../views/AdminView.vue'),
+      meta: { requiresAuth: true, roles: ['ADMIN'] }
+    },
+    {
+      path: '/admin/report/sellers',
+      name: 'SellerList',
+      component: () => import('../views/SellerList.vue'),
+      meta: { requiresAuth: true, roles: ['ADMIN'] }
+    },
+    {
+      path: '/admin/report/categories',
+      name: 'CategoriesSalesReport',
+      component: () => import('../views/CategoriesSalesReport.vue'),
+      meta: { requiresAuth: true, roles: ['ADMIN'] }
+    },
+    {
+      path: '/admin/report/products',
+      name: 'ProductSalesReport',
+      component: () => import('../views/ProductSalesTrend.vue'),
       meta: { requiresAuth: true, roles: ['ADMIN'] }
     }
   ]

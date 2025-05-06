@@ -1,5 +1,8 @@
 package com.wxl.webstore.user.dto;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.wxl.webstore.user.entity.User;
 
 import lombok.Data;
@@ -33,4 +36,11 @@ public class UserDTO {
         
         return dto;
     }
+
+    public static List<UserDTO> fromEntity(List<User> users) {
+        return users.stream()
+                    .map(UserDTO::fromEntity)
+                    .collect(Collectors.toList());
+    }
+    
 }

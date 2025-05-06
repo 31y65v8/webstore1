@@ -7,8 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.wxl.webstore.browse.entity.Browse;
-import com.wxl.webstore.browse.mapper.BrowseMapper;
+import com.wxl.webstore.log.browse.entity.Browse;
+import com.wxl.webstore.log.browse.mapper.BrowseMapper;
 import com.wxl.webstore.log.loginlog.entity.LoginLog;
 import com.wxl.webstore.log.loginlog.mapper.LoginLogMapper;
 import com.wxl.webstore.log.purchaselog.entity.PurchaseLog;

@@ -6,6 +6,8 @@ import com.wxl.webstore.common.enums.ProductCategory;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <p>
@@ -30,4 +32,6 @@ public interface PurchaseLogService extends IService<PurchaseLog> {
     void recordPurchaseLog(Long userId, Long orderId, Long productId, 
                           ProductCategory productCategory, Integer quantity,
                           BigDecimal unitPrice, HttpServletRequest request);
+
+    
 }

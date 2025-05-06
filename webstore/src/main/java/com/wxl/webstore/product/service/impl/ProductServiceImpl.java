@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.wxl.webstore.SalesReport.dto.SellerCategorySalesReportDTO;
 import com.wxl.webstore.common.enums.ProductCategory;
 import com.wxl.webstore.product.dto.ProductUpdateDTO;
 import com.wxl.webstore.product.entity.Product;
@@ -11,9 +12,14 @@ import com.wxl.webstore.product.dto.ProductDTO;
 import com.wxl.webstore.product.mapper.ProductMapper;
 import com.wxl.webstore.product.service.ProductService;
 import com.wxl.webstore.common.utils.JwtUtil;
+import com.wxl.webstore.log.purchaselog.entity.PurchaseLog;
+import com.wxl.webstore.log.purchaselog.service.PurchaseLogService;
+
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +29,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.ArrayList;
 
 /**
  * <p>
@@ -42,6 +50,12 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Autowired
     private RedissonClient redissonClient;
+
+    @Autowired
+    private PurchaseLogService purchaseLogService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     // 获取首页的分页商品
     @Override
@@ -396,5 +410,77 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         product.setSales(newSales);
         this.updateById(product);
     }
-    
+
+    @Override
+    public List<Long> getRecommendedProductsByCategoryAndPriceRange(ProductCategory category, BigDecimal minPrice, BigDecimal maxPrice) {
+        return productMapper.selectProductIdsByCategoryAndPriceRange(category.name(), minPrice, maxPrice);
+    }
+
+    @Override
+    public Set<ProductCategory> getProductCategoriesBySellerId(Long sellerId) {
+        List<Product> products = this.lambdaQuery()
+            .eq(Product::getSellerId, sellerId)
+            .select(Product::getCategory)
+            .list();
+        // 提取品类去重
+        return products.stream()
+            .map(Product::getCategory)
+            .collect(Collectors.toSet());
+    }
+
+    // 查询销售人员各品类销售业绩
+    public List<SellerCategorySalesReportDTO> getSellerCategorySalesReport(Long sellerId) {
+        Set<ProductCategory> categories = getProductCategoriesBySellerId(sellerId);
+        List<SellerCategorySalesReportDTO> reportList = new ArrayList<>();
+        for (ProductCategory category : categories) {
+            // 查询该销售人员该品类下所有商品ID
+            List<Long> productIds = this.lambdaQuery()
+                .eq(Product::getSellerId, sellerId)
+                .eq(Product::getCategory, category)
+                .select(Product::getId)
+                .list()
+                .stream().map(Product::getId).collect(Collectors.toList());
+            if (productIds.isEmpty()) continue;
+
+            // 查询这些商品的销售日志
+            List<PurchaseLog> logs = purchaseLogService.list(
+                new LambdaQueryWrapper<PurchaseLog>().in(PurchaseLog::getProductId, productIds)
+            );
+            int totalQuantity = logs.stream().mapToInt(PurchaseLog::getQuantity).sum();
+            BigDecimal totalAmount = logs.stream()
+                .map(log -> log.getUnitPrice().multiply(BigDecimal.valueOf(log.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            SellerCategorySalesReportDTO dto = new SellerCategorySalesReportDTO();
+            dto.setSellerId(sellerId);
+            dto.setCategory(category);
+            dto.setTotalQuantity(totalQuantity);
+            dto.setTotalSalesAmount(totalAmount);
+            reportList.add(dto);
+        }
+        return reportList;
+    }
+
+    // 每天凌晨1点定时统计并缓存，保留24小时
+    @Scheduled(cron = "0 0 1 * * ?")
+    public void cacheAllSellerCategorySalesReports() {
+        // 获取所有销售人员ID
+        List<Long> sellerIds = this.baseMapper.selectDistinctSellerIds();
+        for (Long sellerId : sellerIds) {
+            List<SellerCategorySalesReportDTO> report = getSellerCategorySalesReport(sellerId);
+            String cacheKey = "seller:category:sales:report:" + sellerId;
+            redisTemplate.opsForValue().set(cacheKey, report, 24, TimeUnit.HOURS);
+        }
+    }
+
+    // 查询缓存
+    public List<SellerCategorySalesReportDTO> getCachedSellerCategorySalesReport(Long sellerId) {
+        String cacheKey = "seller:category:sales:report:" + sellerId;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached != null) {
+            return (List<SellerCategorySalesReportDTO>) cached;
+        }
+        // 缓存没有则实时查
+        return getSellerCategorySalesReport(sellerId);
+    }
 }

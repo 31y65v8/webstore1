@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 /**
  * <p>
@@ -24,7 +25,7 @@ public interface ProductService extends IService<Product> {
     Page<Product> getProductsByName(int pageNum, int pageSize, String name);
     List<Product> getProductsByIds(List<Long> productIds);
     Product addProduct(Product product);
-    Page<Product> getSellerProducts(int pageNum, int pageSize);
+    Page<Product> getSellerProducts(int pageNum, int pageSize);//获取当前SELLER负责的商品
     Product updateProduct(Product product);//全部更新，用不上
     void deleteProduct(Long id);
     Product getProductById(Long id);
@@ -38,4 +39,8 @@ public interface ProductService extends IService<Product> {
     Page<ProductDTO> getPageByCategoryDTOs(int pageNum, int pageSize, ProductCategory category);
     Page<ProductDTO> getProductsByNameDTOs(int pageNum, int pageSize, String name);
     List<ProductDTO> getProductsByIdsDTOs(List<Long> productIds);
+    //获得推荐的商品
+    List<Long> getRecommendedProductsByCategoryAndPriceRange(ProductCategory category, BigDecimal minPrice, BigDecimal maxPrice);
+    //List<Product> getProductIdsBySellerId(Long sellerId);
+    Set<ProductCategory> getProductCategoriesBySellerId(Long sellerId);
 }

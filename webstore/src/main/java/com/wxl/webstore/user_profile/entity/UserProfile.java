@@ -36,6 +36,15 @@ private static final long serialVersionUID = 1L;
     private BigDecimal averageOrderAmount;//平均订单金额
     @TableField("last30days_purchase_frequency")
     private Long last30daysPurchaseFrequency;//最近30天购买频率
+    @TableField("recency_score")
+    private Integer recencyScore;
+    @TableField("frequency_score")
+    private Integer frequencyScore;
+    @TableField("monetary_score")
+    private Integer monetaryScore;
+    @TableField("rmf_level")
+    private String rmfLevel;
+
     //购物偏好
     @TableField("primary_category")
     private String primaryCategory;
