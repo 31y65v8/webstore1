@@ -2,9 +2,13 @@ package com.wxl.webstore.common.config;
 
 import com.wxl.webstore.common.filter.JwtAuthenticationFilter;
 
+import java.util.Arrays;
+import org.springframework.core.Ordered; 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -74,11 +78,15 @@ public class SecurityConfig {
                         // 允许匿名访问的接口
                         .requestMatchers(
                             "/",
+                            "/index.html",
+                            "/assets/**",
+                            "/favicon.ico",
                             "/index",
                             "/api/user/register",
                             "/api/user/login",
                             "/api/product/products",
                             "/api/product/products/category",
+                            "/api/product/products/search",
                             "/api/product/upload/image",
                             "/api/product/images/**",
                             "/api/user/info",
@@ -101,7 +109,7 @@ public class SecurityConfig {
     }
 
     // CORS 配置
-    @Bean
+    /*@Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOrigin("http://localhost:5173"); // 允许前端的域名
@@ -109,6 +117,24 @@ public class SecurityConfig {
         configuration.addAllowedHeader("*"); // 允许所有请求头
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // 配置全局 CORS
+        return source;
+    }*/
+
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // 修改点1：允许同源访问（因为前后端已合并部署）
+        configuration.setAllowCredentials(true);
+        configuration.addAllowedOriginPattern("*");  // 替代原来的addAllowedOrigin
+        // 修改点2：明确生产环境需要的HTTP方法
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // 修改点3：设置响应头可见性
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+    
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration); // 只对API路径生效
         return source;
     }
 }

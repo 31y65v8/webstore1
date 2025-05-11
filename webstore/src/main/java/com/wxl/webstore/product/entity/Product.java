@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.wxl.webstore.common.enums.ProductCategory;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ private static final long serialVersionUID = 1L;
 
         @Schema(description = "商品ID(主键)")
     @TableField("id")
+    @TableId("id")
     private Long id;
         @Schema(description = "商品名称")
     @TableField("name")

@@ -448,7 +448,7 @@ const confirmDeleteAccount = () => {
 // 注销账号
 const deleteAccount = async () => {
   try {
-    const response = await axios.delete('/api/user/delete');
+    const response = await axios.post('/api/user/deleteuser');
     console.log('注销账号响应:', response.data);
     
     if (response.data.code === 200) {

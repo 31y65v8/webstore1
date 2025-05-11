@@ -25,15 +25,12 @@
         <p>查看各类别商品的销量、库存等统计</p>
       </div>
 
+      
+
       <div class="menu-card" @click="goToProductSalesTrend">
         <i class="icon chart-icon"></i>
         <h3>商品销售趋势与异常</h3>
         <p>查看商品销售趋势预测与异常监控</p>
-      </div>
-      <div class="menu-card" @click="goToUserProfile">
-        <i class="icon chart-icon"></i>
-        <h3>用户画像</h3>
-        <p>查看用户画像</p>
       </div>
     </div>
 
@@ -221,6 +218,10 @@ export default {
       router.push("/admin/report/products")
     };
 
+    const goToUserProfile = () => {
+      router.push("/admin/report/userprofile")
+    };
+
 
     const fetchSellers = async () => {
       loading.value = true;
@@ -302,7 +303,7 @@ export default {
     const deleteSeller = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.post('/api/admin/removeSeller', null, {
+        const response = await axios.post('/api/user/deleteseller/{userId}', null, {
           params: { userId: selectedSeller.value.id },
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -386,7 +387,8 @@ export default {
       fetchSalesReport,
       showCategoriesSalesReport,
       goToCategoriesSalesReport,
-      showProductSalesTrend
+      showProductSalesTrend,
+      goToUserProfile
     };
   }
 };

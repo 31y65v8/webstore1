@@ -139,9 +139,7 @@ public class OrderItemServiceImpl extends ServiceImpl<OrderItemMapper, OrderItem
     }
      // 通知用户订单已发货
      private void notifyUser(OrderItem orderItem) {
-        // 根据用户注册方式选择通知方式（短信或邮件）
-        // 此处需要调用用户服务获取用户信息
-        // 实现短信或邮件发送逻辑
+        
     }
 
     @Override
@@ -227,7 +225,6 @@ public class OrderItemServiceImpl extends ServiceImpl<OrderItemMapper, OrderItem
             dto.setProductPrice(product.getPrice());
         }
         
-        // 使用新方法直接获取订单信息，不再依赖OrdersService
         Orders order = baseMapper.getOrderByOrderItemId(orderItem.getId());
         if (order != null) {
             // 获取收货地址信息

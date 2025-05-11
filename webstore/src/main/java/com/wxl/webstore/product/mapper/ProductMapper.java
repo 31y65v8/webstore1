@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -63,5 +65,11 @@ public interface ProductMapper extends BaseMapper<Product> {
 
     @Select("SELECT id FROM product WHERE category = #{category} AND is_deleted = 0")
     List<Long> selectIdsByCategory(@Param("category") String category);
+
+    @Update("UPDATE product SET is_deleted = 1 WHERE id = #{id}")
+    int updateIsDeleteById(@Param("id") Long id);
+
+    @Update("UPDATE product SET sales = sales + #{quantity} WHERE id = #{id}")
+    int updatesales(@Param("id") Long id,@Param("quantity") int quantity);
 
 }

@@ -61,5 +61,5 @@ public interface UserProfileAnalysisService extends IService<UserProfile> {
      * @param userId 用户ID
      * @return 推荐商品ID列表
      */
-    List<Long> getRecommendedProducts(Long userId);
+    //List<Long> getRecommendedProducts(Long userId);
 }

@@ -12,11 +12,14 @@ import com.wxl.webstore.log.operationlog.annotation.OperationLogAnnoce;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
-import com.wxl.webstore.common.Result;
+import com.wxl.webstore.common.response.Result;
 import io.jsonwebtoken.Claims;
+import io.swagger.v3.oas.annotations.Parameter;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,20 @@ public class UserController {
     
     @Autowired
     private LoginLogService loginLogService;
+
+    private Long getUserIdFromToken(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            throw new RuntimeException("未授权的请求");
+        }
+        token = token.substring(7);
+        try {
+            Long userId = jwtUtil.getUserIdFromToken(token);
+            return userId;
+        } catch (Exception e) {
+            throw new RuntimeException("解析token失败：" + e.getMessage());
+        }
+    }
 
     @PostMapping("/register")
     public Result<User> register(@RequestBody @Valid UserRegisterDTO dto) {
@@ -92,11 +109,11 @@ public class UserController {
     }
 
     //注销账户，前端调用后应该自动接上退出登录操作！！！！！
-    @DeleteMapping("/delete")
+    @PostMapping("/deleteuser")
     @OperationLogAnnoce(module = "用户模块", operation = "注销账户")
-    public Result<String> deleteAccount(HttpServletRequest request) {
+    public Result<User> deleteUserAccount(HttpServletRequest request) {
         // 从请求头获取token
-        String token = request.getHeader("Authorization");
+        /*String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
             // 解析token获取账号和角色
@@ -107,7 +124,28 @@ public class UserController {
             userService.deleteByAccountAndRole(account, role);
             return Result.success("账号删除成功");
         }
-        return Result.error(401, "无效的token");
+        return Result.error(401, "无效的token");*/
+        try{
+            Long userId = getUserIdFromToken(request);
+        User user = userService.deleteAccount(userId);
+        return Result.success(user);
+        }catch (Exception e){
+            return Result.error("注销失败：" + e.getMessage());
+        }
+    }
+
+    @PostMapping("/deleteseller/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @OperationLogAnnoce(module = "管理员模块", operation = "删除销售人员")
+    public Result<User> deleteSellerAccount(@Parameter Long sellerId){
+
+        try{
+            //Long sellerId = getUserIdFromToken(request);
+            User seller = userService.deleteAccount(sellerId);
+            return Result.success(seller);
+        }catch (Exception e){
+            return Result.error("删除销售人员失败：" + e.getMessage());
+        }
     }
 
     @GetMapping("/info")

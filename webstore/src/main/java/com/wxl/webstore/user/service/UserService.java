@@ -40,8 +40,11 @@ public interface UserService extends IService<User> {
      * 根据账号和角色删除用户
      * @param account 账号
      * @param role 角色
-     */
+     
     void deleteByAccountAndRole(String account, UserRole role);
+    
+    /*注销账户 */
+    public User deleteAccount(Long userId);
 
     /**
      * 检查用户是否存在

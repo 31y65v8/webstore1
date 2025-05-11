@@ -3,6 +3,7 @@ package com.wxl.webstore.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.common.enums.UserRole;
+import com.wxl.webstore.common.response.Result;
 import com.wxl.webstore.user.entity.User;
 import com.wxl.webstore.user.mapper.UserMapper;
 import com.wxl.webstore.user.service.UserService;
@@ -29,6 +30,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    UserMapper userMapper;
+
+
 
     @Override
     @Transactional
@@ -86,7 +92,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return user;
     }
 
-    @Override
+    /*@Override
     @Transactional
     public void deleteByAccountAndRole(String account, UserRole role) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -99,11 +105,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         User user = getOne(queryWrapper);
         if (user != null) {
-            user.setIsDeleted(true);
-            user.setDeletedAt(LocalDateTime.now());
-            updateById(user);
+            //user.setIsDeleted(true);
+            //user.setDeletedAt(LocalDateTime.now());
+            //updateById(user);
+            userMapper.updateIsDeleteById()
         }
+    }*/
+
+    @Override
+    @Transactional
+    public User deleteAccount(Long userId){
+        
+        userMapper.updateIsDeleteById(userId);
+        User currentuser = this.getById(userId);
+        return currentuser;
     }
+
 
     @Override
     public boolean existsByAccountAndRole(String account, UserRole role) {

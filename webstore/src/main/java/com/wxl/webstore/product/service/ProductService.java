@@ -43,4 +43,5 @@ public interface ProductService extends IService<Product> {
     List<Long> getRecommendedProductsByCategoryAndPriceRange(ProductCategory category, BigDecimal minPrice, BigDecimal maxPrice);
     //List<Product> getProductIdsBySellerId(Long sellerId);
     Set<ProductCategory> getProductCategoriesBySellerId(Long sellerId);
+    //List<ProductDTO> getRecommendedProducts(int pageNum, int pageSize,Long userId);
 }

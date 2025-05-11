@@ -2,22 +2,29 @@ package com.wxl.webstore.product.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wxl.webstore.common.enums.ProductCategory;
+import com.wxl.webstore.common.utils.JwtUtil;
 import com.wxl.webstore.log.operationlog.annotation.OperationLogAnnoce;
 import com.wxl.webstore.product.dto.ProductUpdateDTO;
 import com.wxl.webstore.product.entity.Product;
 import com.wxl.webstore.product.dto.ProductDTO;
 import com.wxl.webstore.product.service.ProductService;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.wxl.webstore.common.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,6 +44,9 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    JwtUtil jwtUtil;
+
     @Value("${upload.product-images.path}")
     private String uploadPath;
 
@@ -46,6 +56,8 @@ public class ProductController {
                                          @RequestParam(defaultValue = "10") int pageSize) {
         return productService.getPageOfProductDTOs(pageNum, pageSize);
     }
+
+    
 
     // 获取按照分类分页显示商品
     @GetMapping("/products/category")
@@ -146,13 +158,14 @@ public class ProductController {
     }
 
     // 删除商品（软删除）
-    @DeleteMapping("/{id}")
+    @PutMapping("delete/{id}")
     @PreAuthorize("hasRole('SELLER')")
     @OperationLogAnnoce(module = "商品模块", operation = "删除商品")
-    public Result<Void> deleteProduct(@PathVariable Long id) {
+    public Result<Product> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
-            return Result.success(null);
+            Product product = productService.getById(id);
+            return Result.success(product);
         } catch (Exception e) {
             return Result.error("删除商品失败：" + e.getMessage());
         }

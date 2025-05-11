@@ -1,6 +1,7 @@
 package com.wxl.webstore.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -21,11 +22,15 @@ public class JacksonConfig {
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleModule longModule = new SimpleModule();
+
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
         // 所有 Long 类型都使用 ToStringSerializer
         longModule.addSerializer(Long.class, ToStringSerializer.instance);
         longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
         
+
         // 配置LocalDateTime序列化
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         javaTimeModule.addSerializer(LocalDateTime.class, 
@@ -33,6 +38,7 @@ public class JacksonConfig {
         
         objectMapper.registerModule(longModule);
         objectMapper.registerModule(javaTimeModule);
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
         return objectMapper;
     }

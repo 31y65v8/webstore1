@@ -10,6 +10,7 @@ import com.wxl.webstore.common.utils.JwtUtil;
 import com.wxl.webstore.log.operationlog.annotation.OperationLogAnnoce;
 import com.wxl.webstore.log.purchaselog.service.PurchaseLogService;
 import com.wxl.webstore.product.entity.Product;
+import com.wxl.webstore.product.mapper.ProductMapper;
 import com.wxl.webstore.product.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -46,6 +47,9 @@ public class OrdersController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private ProductMapper productMapper;
 
     /*
      * 从请求头获取token并解析userId
@@ -198,10 +202,12 @@ public class OrdersController {
             // 获取订单项
             List<OrderItem> orderItems = ordersService.getOrderItemsByOrderId(orderId);
             
-            // 记录购买日志
+            // 记录购买日志，更新销量
             for (OrderItem item : orderItems) {
                 Product product = productService.getById(item.getProductId());
                 if (product != null) {
+                    Long productId = item.getProductId();
+                    productMapper.updatesales(productId,item.getQuantity());
                     purchaseLogService.recordPurchaseLog(
                         userId,
                         orderId,

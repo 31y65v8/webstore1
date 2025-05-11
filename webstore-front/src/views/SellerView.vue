@@ -3,7 +3,7 @@
     <button class="back-button" @click="goToHome">
         <span>&larr;</span> 
       </button>
-    <h1>管理中心</h1>
+    <h1>卖家中心</h1>
     
     <div class="dashboard-actions">
       <button class="add-product-btn" @click="showAddProductModal = true">

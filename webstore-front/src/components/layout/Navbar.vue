@@ -17,6 +17,11 @@
          :class="{ active: currentCategory === category.value }">
         {{ category.label }}
       </a>
+      <a v-if="isLoggedIn" 
+         @click="handleRecommendSelect"
+         >
+        推荐
+      </a>
     </div>
     <div class="user-actions">
       <template v-if="!isLoggedIn">
@@ -67,6 +72,7 @@
 import { ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 const emit = defineEmits(['category-change', 'show-login', 'show-register'])
@@ -76,6 +82,7 @@ const { isLoggedIn, username, userRole, logout } = useAuth()
 const searchQuery = ref('')
 const currentCategory = ref('ALL')
 const categories = [
+  
   { value: 'ALL', label: '全部' },
   { value: 'FASHION', label: '服饰' },
   { value: 'HOME', label: '家居' },
@@ -87,8 +94,20 @@ const categories = [
   { value: 'DIGITAL', label: '数码' }
 ]
 
+/*const fetchSearchResult = async () => {
+  await axios.get('/api/product/products/search', null, {
+      params: {
+        q: searchQuery.value
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+}*/
+
 const handleSearch = () => {
   if (!searchQuery.value.trim()) return
+  /*fetchSearchResult*/
   router.push({
     path: '/search',
     query: { q: searchQuery.value }
@@ -98,6 +117,10 @@ const handleSearch = () => {
 const handleCategorySelect = (category) => {
   currentCategory.value = category.value
   emit('category-change', category.value)
+}
+
+const handleRecommendSelect = () => {
+  router.push('recommand')
 }
 
 const goToUserInfo = () => {

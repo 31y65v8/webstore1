@@ -92,6 +92,12 @@ const router = createRouter({
       name: 'ProductSalesReport',
       component: () => import('../views/ProductSalesTrend.vue'),
       meta: { requiresAuth: true, roles: ['ADMIN'] }
+    },
+    {
+      path: '/recommand',
+      name: 'RecommandedProducts',
+      component: () => import('../views/RecommandedProducts.vue'),
+      meta: { requiresAuth: true, roles: ['CUSTOMER'] }
     }
   ]
 })

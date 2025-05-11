@@ -10,37 +10,7 @@
         <p class="price">¥{{ formatPrice(product.price) }}</p>
         <span class="sales">销量: {{ product.sales || 0 }}</span>
       </div>
-      <!--
-      <button class="add-to-cart-btn" @click.stop="showQuantityModal = true">
-        <font-awesome-icon icon="shopping-cart" /> 
-      </button>-->
     </div>
-    
-    <!-- 数量选择弹窗 
-    <div v-if="showQuantityModal" class="quantity-modal">
-      <div class="quantity-modal-content" @click.stop>
-        <h3>选择数量</h3>
-        <div class="product-preview">
-          <img :src="product.imgurl" :alt="product.name">
-          <div class="product-preview-info">
-            <h4>{{ product.name }}</h4>
-            <p class="preview-price">¥{{ formatPrice(product.price) }}</p>
-          </div>
-        </div>
-        
-        <div class="quantity-selector">
-          <button @click="decreaseQuantity" :disabled="quantity <= 1">-</button>
-          <input type="number" v-model.number="quantity" min="1" max="99">
-          <button @click="increaseQuantity" :disabled="quantity >= 99">+</button>
-        </div>
-        
-        <div class="modal-actions">
-          <button class="cancel-btn" @click="showQuantityModal = false">取消</button>
-          <button class="confirm-btn" @click="addToCart">确定</button>
-        </div>
-      </div>
-      <div class="modal-overlay" @click="showQuantityModal = false"></div>
-    </div>-->
   </div>
 </template>
 

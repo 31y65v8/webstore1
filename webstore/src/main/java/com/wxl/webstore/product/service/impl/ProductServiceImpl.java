@@ -11,12 +11,19 @@ import com.wxl.webstore.product.entity.Product;
 import com.wxl.webstore.product.dto.ProductDTO;
 import com.wxl.webstore.product.mapper.ProductMapper;
 import com.wxl.webstore.product.service.ProductService;
+import com.wxl.webstore.user_profile.entity.UserProfile;
+import com.wxl.webstore.user_profile.mapper.UserProfileMapper;
+import com.wxl.webstore.user_profile.service.UserProfileAnalysisService;
+
+import io.jsonwebtoken.lang.Collections;
+
 import com.wxl.webstore.common.utils.JwtUtil;
 import com.wxl.webstore.log.purchaselog.entity.PurchaseLog;
 import com.wxl.webstore.log.purchaselog.service.PurchaseLogService;
 
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.Set;
@@ -57,6 +65,17 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Autowired
+    UserProfileAnalysisService userProfileAnalysisService;
+
+    @Autowired
+    UserProfileMapper userProfileMapper;
+
+    
+
+
+    
+
     // 获取首页的分页商品
     @Override
     @Transactional
@@ -65,10 +84,108 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         //return productMapper.selectPageAll(page);
         // 创建查询条件
         LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Product::getIsDeleted, false);
         queryWrapper.orderByDesc(Product::getCreateTime); // 按创建时间降序
 
-        return this.page(page, queryWrapper);
+        //return this.page(page, queryWrapper);
+        return productMapper.selectPage(page, queryWrapper);
     }
+    
+
+    /*@Override
+    @Transactional
+    public Page<Product> getPageOfProducts(int pageNum, int pageSize, Long userId) {
+        // 获取推荐商品 ID 列表
+        List<Long> recommendedIds = getRecommendedProducts(userId);
+
+        List<Product> finalResult = new ArrayList<>();
+
+        if (recommendedIds != null && !recommendedIds.isEmpty()) {
+            // 查询推荐商品（保持推荐顺序）
+            List<Product> recommendedProducts = this.getProductsByIds(recommendedIds);
+            // 排序保持和 recommendedIds 顺序一致
+            Map<Long, Product> idMap = recommendedProducts.stream()
+                    .collect(Collectors.toMap(
+                        product -> product.getId(),  
+                        product -> product));
+            for (Long id : recommendedIds) {
+                if (idMap.containsKey(id)) {
+                    finalResult.add(idMap.get(id));
+                }
+            }
+
+            // 查询非推荐商品（不在 recommendedIds 中）
+            LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+            wrapper.notIn(Product::getId, recommendedIds);
+            wrapper.orderByDesc(Product::getCreateTime);
+            List<Product> nonRecommended = this.list(wrapper);
+
+            finalResult.addAll(nonRecommended);
+        } else {
+            // 无推荐，直接按创建时间倒序
+            LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+            wrapper.orderByDesc(Product::getCreateTime);
+            finalResult = this.list(wrapper);
+        }
+
+        // 手动分页
+        int start = (pageNum - 1) * pageSize;
+        int end = Math.min(start + pageSize, finalResult.size());
+        List<Product> pageRecords = start <= end ? finalResult.subList(start, end) : Collections.emptyList();
+
+        Page<Product> page = new Page<>(pageNum, pageSize, finalResult.size());
+        page.setRecords(pageRecords);
+        return page;
+    }*/
+
+
+
+    //获取推荐商品
+    /*@Override
+    public List<ProductDTO> getRecommendedProducts(int pageNum, int pageSize,Long userId) {
+        String cacheKey = "userProfile:recommend:" + userId;
+        ValueOperations<String, Object> ops = redisTemplate.opsForValue();
+
+        List<Long> productIds = (List<Long>) ops.get(cacheKey);
+        if (productIds == null) {
+            userProfileAnalysisService.analyzeAndUpdateUserProfile(userId);
+            UserProfile profile = userProfileMapper.selectByUserId(userId);
+                if (profile == null) {
+                    return Collections.emptyList();
+                    //profile = userProfileAnalysisService.analyzeAndUpdateUserProfile(userId);
+                }
+
+            ProductCategory primaryCategory = profile.getPrimaryCategory() != null ?
+                ProductCategory.valueOf(profile.getPrimaryCategory()) : null;
+
+            if (primaryCategory == null) {
+                return Collections.emptyList();
+            }
+
+            // 设置推荐价格区间
+            BigDecimal avgAmount = profile.getAverageOrderAmount() != null ? profile.getAverageOrderAmount() : BigDecimal.ZERO;
+            BigDecimal minPrice = avgAmount.multiply(new BigDecimal("0.8"));
+            BigDecimal maxPrice = avgAmount.multiply(new BigDecimal("1.2"));
+
+            // 调用 ProductService 查询推荐商品
+            productIds = this.getRecommendedProductsByCategoryAndPriceRange(primaryCategory, minPrice, maxPrice);
+
+            ops.set(cacheKey, productIds, 30, TimeUnit.MINUTES); // 缓存30分钟
+        }
+
+        
+
+        // 懒加载分页处理
+        int start = (pageNum - 1) * pageSize;
+        int end = Math.min(start + pageSize, productIds.size());
+
+        if (start >= end) {
+            return Collections.emptyList();
+        }
+
+        List<Long> pageIds = productIds.subList(start, end);
+        return this.getProductsByIdsDTOs(pageIds);
+    }*/
 
     // 获取分类分页商品
     @Override
@@ -246,7 +363,9 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         // 软删除商品
         product.setIsDeleted(true);
         product.setUpdateTime(LocalDateTime.now());
-        this.updateById(product);
+        productMapper.updateIsDeleteById(id);
+        boolean result = this.updateById(product);
+        System.out.println("更新结果：" + result);
     }
 
     @Override
@@ -270,7 +389,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         return product.getPrice();
     }
 
-    @Override
+    /*@Override
     @Transactional
     public void decreaseStock(Long productId, int quantity) {
         String lockKey = "product_stock_lock:" + productId;
@@ -309,9 +428,44 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
                 lock.unlock();
             }
         }
-    }
+    }*/
 
     @Override
+    @Transactional
+    public void decreaseStock(Long productId, int quantity) {
+        String lockKey = "product_stock_lock:" + productId;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            // 尝试获取分布式锁，最多等待3秒，锁自动过期30秒
+            boolean isLocked = lock.tryLock(3, 30, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new RuntimeException("获取商品锁失败，请稍后重试");
+            }
+
+            // 使用 SQL 原子操作更新库存
+            UpdateWrapper<Product> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", productId)
+                        .ge("storage", quantity) // 确保库存充足
+                        .setSql("storage = storage - " + quantity);
+
+            boolean updated = this.update(updateWrapper);
+            if (!updated) {
+                throw new RuntimeException("库存不足或并发冲突，扣减失败");
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("减少库存操作被中断", e);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+
+    /*@Override
     @Transactional
     public void increaseStock(Long productId, int quantity) {
         String lockKey = "product_stock_lock:" + productId;
@@ -345,7 +499,41 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
                 lock.unlock();
             }
         }
+    }*/
+
+    @Override
+    @Transactional
+    public void increaseStock(Long productId, int quantity) {
+        String lockKey = "product_stock_lock:" + productId;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            // 尝试获取锁，最多等待3秒，锁自动释放时间30秒
+            boolean isLocked = lock.tryLock(3, 30, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new RuntimeException("获取商品锁失败，请稍后重试");
+            }
+
+            // 使用 SQL 原子操作增加库存
+            UpdateWrapper<Product> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", productId)
+                        .setSql("storage = storage + " + quantity);
+
+            boolean updated = this.update(updateWrapper);
+            if (!updated) {
+                throw new RuntimeException("增加库存失败");
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("增加库存操作被中断", e);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
     }
+
 
     @Override
     @Transactional
@@ -370,6 +558,8 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         Page<Product> productPage = getProductsByName(pageNum, pageSize, name);
         return convertToProductDTOPage(productPage);
     }
+
+    
 
     @Override
     @Transactional

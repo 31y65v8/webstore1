@@ -24,9 +24,9 @@ private static final long serialVersionUID = 1L;
     private Long userId;
     //地域信息
     @TableField("province_code")
-    private String provinceCode;
+    private String province;
     @TableField("city_code")
-    private String cityCode;
+    private String city;
     //RFM指标
     @TableField("last_purchase_time")
     private LocalDateTime lastPurchaseTime;//最近一次购买时间

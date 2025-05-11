@@ -10,7 +10,7 @@
             id="name"
             v-model="formData.name"
             type="text"
-            required
+            
             placeholder="请输入商品名称"
           >
         </div>
@@ -22,7 +22,7 @@
             v-model="formData.price"
             type="number"
             step="0.01"
-            required
+            
             placeholder="请输入商品价格"
           >
         </div>
@@ -33,7 +33,7 @@
             id="storage"
             v-model="formData.storage"
             type="number"
-            required
+            
             placeholder="请输入库存数量"
           >
         </div>
@@ -43,7 +43,7 @@
           <select 
             id="category"
             v-model="formData.category"
-            required
+            
           >
             <option value="">请选择分类</option>
             <option v-for="category in categories" :key="category.value" :value="category.value">
@@ -57,7 +57,7 @@
           <textarea 
             id="description"
             v-model="formData.description"
-            required
+            
             placeholder="请输入商品描述"
           ></textarea>
         </div>
@@ -150,16 +150,45 @@ const handleImageSelect = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  const formData = new FormData()
-  formData.append('file', file)
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    alert('请选择图片文件')
+    return
+  }
+  
+  // 验证文件大小（限制为5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    alert('图片大小不能超过5MB')
+    return
+  }
+
+  /*const formData = new FormData()
+  formData.append('file', file)*/
+
+  const uploadForm = new FormData()
+  uploadForm.append('file', file)
+
+
+  const token = localStorage.getItem('token')
+  if (!token) {
+    alert('请先登录')
+    return
+  }
+
 
   try {
-    const response = await axios.post('/api/product/upload/image', formData, {
+    const response = await axios.post('/api/product/upload/image', /*formData*/uploadForm, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
       }
     })
-    formData.imgurl = response.data.data
+
+    if (response.data.code === 200) {
+      formData.imgurl = response.data.data
+    } else {
+      throw new Error(response.data.message || '上传失败')
+    }
   } catch (error) {
     console.error('上传图片失败:', error)
     alert('上传图片失败，请重试')

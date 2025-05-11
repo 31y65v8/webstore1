@@ -108,7 +108,12 @@ const goToAdminCenter = () => {
 
 <style scoped>
 .home {
+  width: 100%; /* 新增 */
   min-height: 100vh;
+  /*margin: 0 auto;*/
+  padding: 0 20px;
+  box-sizing: border-box;
+  
 }
 
 .user-actions {

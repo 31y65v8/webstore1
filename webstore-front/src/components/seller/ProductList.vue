@@ -148,7 +148,7 @@ const handleDelete = async (product) => {
       return;
     }
 
-    await axios.delete(`/api/products/${product.productId}`, {
+    await axios.put(`/api/product/delete/${product.productId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

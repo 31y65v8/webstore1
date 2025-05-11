@@ -9,12 +9,18 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wxl.webstore.log.purchaselog.entity.PurchaseLog;
 import com.wxl.webstore.log.purchaselog.service.PurchaseLogService;
 import com.wxl.webstore.product.service.ProductService;
+import com.wxl.webstore.receiverInfo.entity.ReceiverInfo;
+import com.wxl.webstore.receiverInfo.service.ReceiverInfoService;
+import com.wxl.webstore.user.entity.User;
+import com.wxl.webstore.user.service.UserService;
 import com.wxl.webstore.log.browse.entity.Browse;
 import com.wxl.webstore.log.browse.service.BrowseService;
 import com.wxl.webstore.log.loginlog.entity.LoginLog;
 import com.wxl.webstore.log.loginlog.service.LoginLogService;
 import com.wxl.webstore.common.enums.ProductCategory;
 import lombok.extern.slf4j.Slf4j;
+
+import org.jboss.marshalling.TraceInformation.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +55,7 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
     private BrowseService browseService;
 
     @Autowired
-    private ProductService productService;
+    private ReceiverInfoService receiverInfoService;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -79,6 +85,8 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
             
             profile.setUpdateTime(LocalDateTime.now());
             saveOrUpdate(profile);
+            // 存入 Redis，缓存用户画像数据
+            redisTemplate.opsForValue().set("userProfile:data:" + userId, profile, 24, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("分析用户画像失败，userId: {}", userId, e);
             throw e;
@@ -93,6 +101,11 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         List<PurchaseLog> purchaseLogs = purchaseLogService.list(new LambdaQueryWrapper<PurchaseLog>()
             .eq(PurchaseLog::getUserId, profile.getUserId())
             .ge(PurchaseLog::getPurchaseTime, thirtyDaysAgo));
+
+            ReceiverInfo receiverInfo = receiverInfoService.getOne(new LambdaQueryWrapper<ReceiverInfo>()
+            .eq(ReceiverInfo::getUserId, profile.getUserId())
+            .eq(ReceiverInfo::getIsDefault, true)
+            .last("LIMIT 1"));
             
         if (purchaseLogs.isEmpty()) {
             profile.setTotalPurchaseAmount(BigDecimal.ZERO);
@@ -154,6 +167,8 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         totalAmount.compareTo(new BigDecimal(700)) > 0 ? 3 :
         totalAmount.compareTo(new BigDecimal(300)) > 0 ? 2 : 1;
             
+        profile.setProvince(receiverInfo.getProvinceName());
+        profile.setCity(receiverInfo.getCityName());
         profile.setTotalPurchaseAmount(totalAmount);
         profile.setAverageOrderAmount(avgOrderAmount);
         profile.setLast30daysPurchaseFrequency(frequency);
@@ -279,7 +294,7 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
         }
     }
     
-    @Override
+    /*@Override
     public List<Long> getRecommendedProducts(Long userId) {
         String cacheKey = "userProfile:recommend:" + userId;
         ValueOperations<String, Object> ops = redisTemplate.opsForValue();
@@ -311,5 +326,5 @@ public class UserProfileAnalysisServiceImpl extends ServiceImpl<UserProfileMappe
 
         ops.set(cacheKey, productIds, 30, TimeUnit.MINUTES); // 缓存30分钟
         return productIds;
-    }
+    }*/
 }
